@@ -1,0 +1,17 @@
+resources:
+  jobs:
+    apply_governance:
+      name: "[loyalty] 04 unity catalog governance and metric views"
+      description: Column comments, domain/certification/PII tags, three governed metric views, least-privilege grants.
+      tasks:
+        - task_key: govern
+          notebook_task:
+            notebook_path: ../src/governance/apply_governance.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"

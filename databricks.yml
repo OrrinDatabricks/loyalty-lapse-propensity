@@ -1,0 +1,26 @@
+bundle:
+  name: loyalty_lapse_propensity
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds every layer of the build
+    default: loyalty_lapse_demo_catalog
+  schema:
+    description: Schema for raw volume, bronze/silver/gold tables, features and scores
+    default: loyalty
+  warehouse_id:
+    description: Serverless SQL warehouse used by the Genie Agent and the app
+    default: b640dd2388fedf8d
+  lakebase_project:
+    description: Lakebase Autoscaling project id
+    default: loyalty-lapse
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://fevm-loyalty-lapse-demo.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

@@ -1,0 +1,20 @@
+resources:
+  jobs:
+    generate_synthetic_data:
+      name: "[loyalty] 01 generate synthetic raw data"
+      description: Writes the seven raw source extracts (CSV + JSON) to the UC volume that the Lakeflow pipeline ingests.
+      tasks:
+        - task_key: generate
+          notebook_task:
+            notebook_path: ../src/generate/generate_synthetic_data.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              volume: raw
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - faker==37.*

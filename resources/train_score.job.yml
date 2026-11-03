@@ -1,0 +1,26 @@
+resources:
+  jobs:
+    train_and_score:
+      name: "[loyalty] 03 train and score lapse model"
+      description: Trains the lapse propensity model on historical snapshots, registers it in UC, then scores active members into member_retention_scores.
+      tasks:
+        - task_key: train
+          notebook_task:
+            notebook_path: ../src/ml/train_lapse_model.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          environment_key: default
+        - task_key: score
+          depends_on:
+            - task_key: train
+          notebook_task:
+            notebook_path: ../src/ml/score_members.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"

@@ -1,0 +1,14 @@
+resources:
+  pipelines:
+    loyalty_pipeline:
+      name: "[loyalty] 02 lakeflow medallion pipeline"
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      photon: true
+      channel: CURRENT
+      configuration:
+        raw_path: /Volumes/${var.catalog}/${var.schema}/raw
+      libraries:
+        - glob:
+            include: ../src/pipeline/**
