@@ -1,5 +1,0 @@
-Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
-Files: 3 uploaded, 0 deleted
-Resources: 0 created, 0 changed, 0 deleted, 4 unchanged
-Error: when --json flag is specified, no positional arguments are allowed. Provide 'job_id' in your JSON input
-exit=1
