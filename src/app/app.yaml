@@ -1,0 +1,14 @@
+command: ["streamlit", "run", "app.py"]
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  - name: GENIE_SPACE_ID
+    valueFrom: genie-space
+  - name: CATALOG
+    value: loyalty_lapse_demo_catalog
+  - name: SCHEMA
+    value: loyalty
+  - name: PG_SCHEMA
+    value: loyalty
+  - name: APP_SCHEMA
+    value: retention_app

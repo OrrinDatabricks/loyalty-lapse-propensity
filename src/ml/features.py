@@ -78,7 +78,7 @@ def build_features(spark, catalog, schema, as_of):
         .withColumn("engagement_velocity",
                     F.col("events_30d") / F.greatest(F.lit(0.2), (F.col("events_180d") - F.col("events_30d")) / 5.0))
     )
-    return feats.select("member_id", "as_of_date", "spend_12m", *CATEGORICAL_FEATURES, *NUMERIC_FEATURES)
+    return feats.select("member_id", "as_of_date", *CATEGORICAL_FEATURES, *NUMERIC_FEATURES)
 
 
 def attach_label(spark, catalog, schema, feats, as_of):

@@ -1,0 +1,10 @@
+Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
+Error: cannot create resources.apps.retention_console:  (400 BAD_REQUEST)
+
+Endpoint: POST https://fevm-loyalty-lapse-demo.cloud.databricks.com/api/2.0/apps?no_compute=true
+HTTP Status: 400 Bad Request
+API error_code: BAD_REQUEST
+API message: 
+
+Files: 1 uploaded, 0 deleted
+exit=1

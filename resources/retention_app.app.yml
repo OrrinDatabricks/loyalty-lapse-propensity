@@ -1,0 +1,26 @@
+variables:
+  genie_space_id:
+    description: Genie Agent (space) id created by src/genie/deploy_genie_agent.sh
+    default: ""
+
+resources:
+  apps:
+    retention_console:
+      name: loyalty-retention-console
+      description: Retention worklist (Lakebase) + governed KPIs (metric views) + Genie Agent chat for the loyalty team.
+      source_code_path: ../src/app
+      resources:
+        - name: sql-warehouse
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
+        - name: genie-space
+          genie_space:
+            name: loyalty-retention-genie
+            space_id: ${var.genie_space_id}
+            permission: CAN_RUN
+        - name: postgres
+          postgres:
+            branch: projects/${var.lakebase_project}/branches/production
+            database: projects/${var.lakebase_project}/branches/production/databases/databricks-postgres
+            permission: CAN_CONNECT_AND_CREATE
