@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 03b Score active members and write the retention worklist
 # MAGIC
-# MAGIC Loads the `champion` model from Unity Catalog, scores every member active in the last 180 days as of the latest
+# MAGIC Loads the `champion` model from Unity Catalog, scores every regular shopper (2+ purchases in the last 180 days) as of the latest
 # MAGIC transaction date, attaches plain-language risk drivers and a recommended action, and writes
 # MAGIC `member_retention_scores` (Change Data Feed enabled so Lakebase can sync it).
 
@@ -28,6 +28,9 @@ print("Scoring as of", AS_OF)
 feats = build_features(spark, CATALOG, SCHEMA, AS_OF)
 feats.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.ml_scoring_features")
 feats = spark.table(f"{CATALOG}.{SCHEMA}.ml_scoring_features")
+# match the logged signature: categoricals as string, every numeric feature as double
+for c in NUMERIC_FEATURES:
+    feats = feats.withColumn(c, F.col(c).cast("double"))
 
 mlflow.set_registry_uri("databricks-uc")
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
@@ -62,7 +65,7 @@ action = (F.when(F.array_contains("risk_drivers", "fit_returns"), "Fit-guarantee
 scores = (scored
           .withColumn("risk_band", F.when(F.col("p_lapse") >= 0.60, "High").when(F.col("p_lapse") >= 0.35, "Medium").otherwise("Low"))
           .withColumn("risk_drivers", drivers)
-          .withColumn("primary_driver", F.coalesce(F.element_at("risk_drivers", 1), F.lit("none")))
+          .withColumn("primary_driver", F.coalesce(F.try_element_at("risk_drivers", F.lit(1)), F.lit("none")))
           .withColumn("recommended_action", action)
           .withColumn("annual_value_at_risk", F.round(F.col("spend_12m") * F.col("p_lapse"), 2))
           .withColumn("scored_at", F.current_timestamp())

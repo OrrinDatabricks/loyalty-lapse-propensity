@@ -18,7 +18,7 @@ ACTIVE_WINDOW_DAYS = 180
 
 
 def build_features(spark, catalog, schema, as_of):
-    """Return one row per member active in the 180 days before as_of, with features computed strictly from data <= as_of."""
+    """Return one row per regular shopper (2+ purchases in the 180 days before as_of), features computed strictly from data <= as_of."""
     fq = lambda t: f"{catalog}.{schema}.{t}"
     as_of_col = F.lit(as_of).cast("date")
 
@@ -66,7 +66,9 @@ def build_features(spark, catalog, schema, as_of):
     feats = (
         members.join(txn_f, "member_id", "inner")  # must have purchased at least once
         .join(ev_f, "member_id", "left").join(ret_f, "member_id", "left").join(cmp_f, "member_id", "left")
-        .filter(F.col("transactions_180d") >= 1)  # active population; already-lapsed members are not scored
+        # regular shoppers only: at least 2 purchases in the trailing 180 days. For lighter buyers a 90-day gap is
+        # normal cadence, not lapse, and they would flood the label with noise. Already-lapsed members are not scored.
+        .filter(F.col("transactions_180d") >= 2)
         .withColumn("as_of_date", as_of_col)
         .withColumn("tenure_days", F.datediff(as_of_col, "join_date"))
         .withColumn("days_since_last_purchase", F.datediff(as_of_col, "last_purchase_date"))

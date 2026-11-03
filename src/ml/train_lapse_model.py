@@ -54,7 +54,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
 train_pd = train_df.select(*FEATURES, "lapsed").toPandas()
-test_pd = test_df.select("member_id", *FEATURES, "lapsed", "spend_12m").toPandas()
+test_pd = test_df.select("member_id", *FEATURES, "lapsed").toPandas()  # spend_12m is already in FEATURES
 for df in (train_pd, test_pd):
     for c in NUMERIC_FEATURES:
         df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
@@ -93,7 +93,7 @@ with mlflow.start_run(run_name="hgb_lapse_v1") as run:
                        "label_horizon_days": 90, "n_iter_fitted": clf.n_iter_})
     mlflow.log_metrics(metrics)
     sig = infer_signature(X_test.head(100), p_test[:100])
-    info = mlflow.sklearn.log_model(model, name="model", signature=sig, input_example=X_test.head(5),
+    info = mlflow.sklearn.log_model(model, artifact_path="model", signature=sig, input_example=X_test.head(5),
                                     registered_model_name=MODEL_NAME)
     run_id = run.info.run_id
 
