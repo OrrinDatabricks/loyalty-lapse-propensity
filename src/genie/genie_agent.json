@@ -1,0 +1,251 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "189209740a8611c162dfa5a7c36bd306",
+        "question": [
+          "Which Gold members in mall stores are at high risk and what action is recommended?"
+        ]
+      },
+      {
+        "id": "1a2f53393ff3040ca0d9bbc9c4e7f12b",
+        "question": [
+          "Did the birthday reward response rate change after July 2026?"
+        ]
+      },
+      {
+        "id": "53245babbdfcc70402b8cb78ca328e5c",
+        "question": [
+          "How much trailing-12-month spend sits with members who have lapsed, by home store format?"
+        ]
+      },
+      {
+        "id": "924580e9c6c5ac6bc6307a915f9b853e",
+        "question": [
+          "Show monthly active buyers and fit return share for 2026"
+        ]
+      },
+      {
+        "id": "dc194d0de81be31886f2e3b3be1f3709",
+        "question": [
+          "What is our lapse rate by tier?"
+        ]
+      },
+      {
+        "id": "ff4979936939e436c88c72715626c76e",
+        "question": [
+          "How much revenue is at risk in the High risk band, and what are the top drivers?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "loyalty_lapse_demo_catalog.loyalty.gold_member_360",
+        "column_configs": [
+          {
+            "column_name": "email",
+            "exclude": true
+          },
+          {
+            "column_name": "first_name",
+            "exclude": true
+          },
+          {
+            "column_name": "home_region",
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "home_store_format",
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "last_name",
+            "exclude": true
+          },
+          {
+            "column_name": "tier",
+            "enable_entity_matching": true
+          }
+        ]
+      },
+      {
+        "identifier": "loyalty_lapse_demo_catalog.loyalty.member_retention_scores",
+        "column_configs": [
+          {
+            "column_name": "engagement_velocity",
+            "exclude": true
+          },
+          {
+            "column_name": "home_store_format",
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "primary_driver",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "risk_band",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "risk_drivers",
+            "exclude": true
+          },
+          {
+            "column_name": "tier",
+            "enable_entity_matching": true
+          }
+        ]
+      }
+    ],
+    "metric_views": [
+      {
+        "identifier": "loyalty_lapse_demo_catalog.loyalty.loyalty_activity_metrics"
+      },
+      {
+        "identifier": "loyalty_lapse_demo_catalog.loyalty.loyalty_member_metrics"
+      },
+      {
+        "identifier": "loyalty_lapse_demo_catalog.loyalty.retention_risk_metrics"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "e00fba6fedfb8a49e13346f7099a23fc",
+        "content": [
+          "A lapsed member is one with no purchase in the last 90 days (lapsed_90d = TRUE in gold_member_360, or the Lapsed dimension in loyalty_member_metrics).",
+          "For rates and totals about members (lapse rate, spend, lapsed revenue) use loyalty_member_metrics with MEASURE(). For monthly trends use loyalty_activity_metrics. For model risk, revenue at risk and drivers use retention_risk_metrics.",
+          "Revenue at risk means SUM(annual_value_at_risk) from member_retention_scores (spend_12m x p_lapse). Never sum spend_12m alone and call it revenue at risk.",
+          "Risk bands: High means p_lapse >= 0.60, Medium 0.35 to 0.60, Low below 0.35.",
+          "When asked for a list of specific members or who to contact, query member_retention_scores and return member_id, tier, p_lapse, primary_driver, recommended_action, annual_value_at_risk ordered by annual_value_at_risk DESC, limited to 50 rows.",
+          "The birthday reward was cut from $20 to $10 on 2026-07-15. The Core Denim fit change happened on 2026-06-01. Mention these when a trend question spans those dates.",
+          "Metric view measures must be queried with MEASURE(`name`) and GROUP BY the dimensions; never apply SUM or AVG around MEASURE().",
+          "Store formats are online, mall, strip and outlet. Tiers are Bronze, Silver, Gold. Regions are West, Southwest, Midwest, Southeast, Northeast."
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "0f82517362f25415455bbb5e8775759c",
+        "question": [
+          "How much revenue is at risk by risk band and primary driver?"
+        ],
+        "sql": [
+          "SELECT `Risk Band`, `Primary Driver`, MEASURE(`Scored Members`) AS members, MEASURE(`Revenue at Risk`) AS revenue_at_risk FROM loyalty_lapse_demo_catalog.loyalty.retention_risk_metrics GROUP BY `Risk Band`, `Primary Driver` ORDER BY revenue_at_risk DESC"
+        ]
+      },
+      {
+        "id": "282704d4ecaefe59cfa0634fd7d5db40",
+        "question": [
+          "Show monthly active buyers and fit return share for 2026"
+        ],
+        "sql": [
+          "SELECT `Activity Month`, MEASURE(`Active Buyers`) AS active_buyers, MEASURE(`Fit Return Share`) AS fit_return_share FROM loyalty_lapse_demo_catalog.loyalty.loyalty_activity_metrics WHERE `Activity Month` >= '2026-01-01' GROUP BY `Activity Month` ORDER BY `Activity Month`"
+        ]
+      },
+      {
+        "id": "82df53c3f9f2b18244a3dcdbc4222c9a",
+        "question": [
+          "How much lapsed spend do we have by home store format?"
+        ],
+        "sql": [
+          "SELECT `Home Store Format`, MEASURE(`Lapsed Members`) AS lapsed_members, MEASURE(`Lapsed Spend 12M`) AS lapsed_spend_12m FROM loyalty_lapse_demo_catalog.loyalty.loyalty_member_metrics GROUP BY `Home Store Format` ORDER BY lapsed_spend_12m DESC"
+        ]
+      },
+      {
+        "id": "a399aa5fae18a56e29dc03c6e77324d3",
+        "question": [
+          "Did the birthday reward response rate change after July 2026?"
+        ],
+        "sql": [
+          "SELECT CASE WHEN `Activity Month` >= '2026-08-01' THEN 'after cut' ELSE 'before cut' END AS period, MEASURE(`Campaign Response Rate`) AS response_rate FROM loyalty_lapse_demo_catalog.loyalty.loyalty_activity_metrics WHERE `Activity Month` >= '2026-01-01' GROUP BY 1 ORDER BY 1"
+        ]
+      },
+      {
+        "id": "cb5400e9843c1543ccfd276a72f65bce",
+        "question": [
+          "What is our lapse rate by tier?"
+        ],
+        "sql": [
+          "SELECT `Tier`, MEASURE(`Members`) AS members, MEASURE(`Lapse Rate`) AS lapse_rate FROM loyalty_lapse_demo_catalog.loyalty.loyalty_member_metrics GROUP BY `Tier` ORDER BY lapse_rate DESC"
+        ]
+      },
+      {
+        "id": "d26c797081ac1f4cb9df77f43944436d",
+        "question": [
+          "Which Gold members in mall stores are at high risk?"
+        ],
+        "sql": [
+          "SELECT member_id, tier, p_lapse, primary_driver, recommended_action, annual_value_at_risk FROM loyalty_lapse_demo_catalog.loyalty.member_retention_scores WHERE risk_band = 'High' AND tier = 'Gold' AND home_store_format = 'mall' ORDER BY annual_value_at_risk DESC LIMIT 50"
+        ]
+      }
+    ]
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "6135eb81616f1b583ffd4ceee1493e26",
+        "question": [
+          "How many members are in the High risk band?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT MEASURE(`High Risk Members`) AS high_risk_members FROM loyalty_lapse_demo_catalog.loyalty.retention_risk_metrics"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "6515229762ab45439156e029d995b163",
+        "question": [
+          "Which home store format has the highest lapse rate among Gold members?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT `Home Store Format`, MEASURE(`Lapse Rate`) AS lapse_rate FROM loyalty_lapse_demo_catalog.loyalty.loyalty_member_metrics WHERE `Tier` = 'Gold' GROUP BY `Home Store Format` ORDER BY lapse_rate DESC LIMIT 1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "8cf3fc2a0002fe45359501fbe97bb23c",
+        "question": [
+          "What is total revenue at risk?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT MEASURE(`Revenue at Risk`) AS revenue_at_risk FROM loyalty_lapse_demo_catalog.loyalty.retention_risk_metrics"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a43daa2b1667a0ea2c0537bd12c98bdb",
+        "question": [
+          "What is the overall lapse rate?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT MEASURE(`Lapse Rate`) AS lapse_rate FROM loyalty_lapse_demo_catalog.loyalty.loyalty_member_metrics"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

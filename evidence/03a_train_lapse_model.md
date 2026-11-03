@@ -50,20 +50,20 @@ train_df.unionByName(test_df).groupBy("as_of_date", "tier").agg(F.count("*").ali
 Output:
 
 ```text
-Training rows: 315345  Hold-out rows: 161095
+Training rows: 188003  Hold-out rows: 94788
 Lapse rate by snapshot and tier:
 +----------+------+-------+----------+
 |as_of_date|  tier|members|lapse_rate|
 +----------+------+-------+----------+
-|2026-04-30|Bronze|  77234|     0.499|
-|2026-04-30|  Gold|   9238|       0.1|
-|2026-04-30|Silver|  77440|     0.255|
-|2026-06-30|Bronze|  69836|     0.488|
-|2026-06-30|  Gold|   8806|     0.131|
-|2026-06-30|Silver|  72791|      0.28|
-|2026-07-31|Bronze|  76741|     0.491|
-|2026-07-31|  Gold|   8864|     0.166|
-|2026-07-31|Silver|  75490|     0.307|
+|2026-04-30|Bronze|  34797|     0.443|
+|2026-04-30|  Gold|   8744|     0.075|
+|2026-04-30|Silver|  57342|     0.217|
+|2026-06-30|Bronze|  28356|      0.43|
+|2026-06-30|  Gold|   8191|     0.109|
+|2026-06-30|Silver|  50573|      0.24|
+|2026-07-31|Bronze|  32412|     0.433|
+|2026-07-31|  Gold|   8366|     0.141|
+|2026-07-31|Silver|  54010|     0.265|
 +----------+------+-------+----------+
 ```
 
@@ -119,9 +119,10 @@ with mlflow.start_run(run_name="hgb_lapse_v1") as run:
                        "test_snapshot": TEST_SNAPSHOT, "n_train": len(train_pd), "n_test": len(test_pd),
                        "label_horizon_days": 90, "n_iter_fitted": clf.n_iter_})
     mlflow.log_metrics(metrics)
-    sig = infer_signature(X_test.head(100), p_test[:100])
+    # pyfunc predict must return probabilities (n x 2), not class labels, so scoring can take P(lapse)
+    sig = infer_signature(X_test.head(100), model.predict_proba(X_test.head(100)))
     info = mlflow.sklearn.log_model(model, artifact_path="model", signature=sig, input_example=X_test.head(5),
-                                    registered_model_name=MODEL_NAME)
+                                    pyfunc_predict_fn="predict_proba", registered_model_name=MODEL_NAME)
     run_id = run.info.run_id
 
 print("Registered:", MODEL_NAME, "version", info.registered_model_version)
@@ -134,17 +135,16 @@ Output:
 
 ```text
 Registered model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model' already exists. Creating a new version of this model...
+Created version '3' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
 
-Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 2
+Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 3
 Hold-out metrics (features as of 2026-07-31 , label window = next 90 days):
-  holdout_auc              0.6894
-  holdout_avg_precision    0.5531
-  precision_at_10pct       0.6033
-  recall_at_10pct          0.1560
-  lift_at_10pct            1.5597
-  base_lapse_rate          0.3868
-
-Created version '2' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
+  holdout_auc              0.7164
+  holdout_avg_precision    0.5191
+  precision_at_10pct       0.5940
+  recall_at_10pct          0.1908
+  lift_at_10pct            1.9077
+  base_lapse_rate          0.3114
 ```
 
 ## Business read of the hold-out: revenue at risk captured by the top decile
@@ -171,19 +171,21 @@ print(f"\nTop decile holds ${summary.loc[0, 'lapsed_spend_12m']:,.0f} of trailin
 Output:
 
 ```text
-decile  members  actual_lapse_rate  avg_score  spend_12m_total  lapsed_spend_12m
-     1    16110              0.603      0.594        3526249.0         2464163.0
-     2    16109              0.556      0.543        3027007.0         1735509.0
-     3    16110              0.520      0.506        3791458.0         2068502.0
-     4    16109              0.487      0.460        4472855.0         2263923.0
-     5    16110              0.446      0.403        6014830.0         2799878.0
-     6    16109              0.366      0.342        6367885.0         2398466.0
-     7    16109              0.321      0.299        7756128.0         2547835.0
-     8    16110              0.264      0.250        9628974.0         2602544.0
-     9    16109              0.206      0.185       13065303.0         2698096.0
-    10    16110              0.097      0.084       26303555.0         2148453.0
+INFO:py4j.clientserver:Received command c on object id p0
 
-Top decile holds $2,464,163 of trailing-12-month spend from members who actually lapsed (10.4% of all lapsed spend) in 10% of the outreach volume.
+decile  members  actual_lapse_rate  avg_score  spend_12m_total  lapsed_spend_12m
+     1     9479              0.594      0.535        3366970.0         2398742.0
+     2     9479              0.492      0.467        2758929.0         1456760.0
+     3     9479              0.452      0.413        3564781.0         1709679.0
+     4     9478              0.373      0.352        4060973.0         1583532.0
+     5     9479              0.327      0.302        4693532.0         1588440.0
+     6     9479              0.268      0.256        5290121.0         1465737.0
+     7     9478              0.224      0.217        6268982.0         1408245.0
+     8     9479              0.193      0.176        7641489.0         1471309.0
+     9     9479              0.132      0.119       10277316.0         1347848.0
+    10     9479              0.057      0.051       19329843.0          916631.0
+
+Top decile holds $2,398,742 of trailing-12-month spend from members who actually lapsed (15.6% of all lapsed spend) in 10% of the outreach volume.
 ```
 
 ## Promote to champion
@@ -210,18 +212,18 @@ print(imp_df.head(12).to_string(index=False))
 Output:
 
 ```text
-loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v2 -> alias 'champion'
+loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v3 -> alias 'champion'
                    feature  importance
-                      tier    0.033990
-days_since_last_engagement    0.033535
-     lifetime_transactions    0.019952
-         home_store_format    0.013217
-  days_since_last_purchase    0.009117
-          transactions_12m    0.008750
-              touches_180d    0.008611
-               tenure_days    0.006719
-               denim_share    0.005698
-               events_180d    0.003597
-       engagement_velocity    0.001745
-                avg_basket    0.000452
+days_since_last_engagement    0.047886
+          transactions_12m    0.031421
+                      tier    0.030661
+         home_store_format    0.022280
+     lifetime_transactions    0.013752
+               denim_share    0.013152
+               tenure_days    0.007904
+              touches_180d    0.007818
+  days_since_last_purchase    0.003078
+               events_180d    0.001708
+                 spend_12m    0.000557
+                 spend_90d    0.000410
 ```

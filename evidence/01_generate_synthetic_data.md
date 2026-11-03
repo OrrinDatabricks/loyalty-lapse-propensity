@@ -196,20 +196,27 @@ members_hidden = (
     .withColumn("denim_affinity", F.round(F.pow(F.rand(25), 1.3), 3))
     .join(store_formats, "home_store_id", "left")
     .withColumn("in_cohort", (F.col("tier").isin("Gold", "Silver")) & (F.col("home_store_format") == "mall") & (F.col("denim_affinity") > 0.6))
-    # lapse mechanics: cohort lapses mid-June to early Sept; post-cut birthday members in Aug-Oct; everyone else at a low natural rate
+    # lapse mechanics: cohort lapses mid-June to early Sept; post-cut birthday members in Aug-Oct; everyone else at a
+    # natural rate that rises with observable traits (no marketing opt-in, short tenure, Bronze) so it is learnable
     .withColumn("r_lapse", F.rand(26))
+    .withColumn("natural_p", F.lit(0.04)
+                + F.when(F.col("preferred_channel") == "none", 0.14).otherwise(0.0)
+                + F.when(F.col("tenure_days") < 240, 0.10).otherwise(0.0)
+                + F.when(F.col("tier") == "Bronze", 0.03).otherwise(0.0))
     .withColumn("lapse_date",
                 F.when(F.col("in_cohort") & (F.col("r_lapse") < 0.55),
                        F.date_add(F.lit("2026-06-15").cast("date"), (F.rand(27) * 75).cast("int")))
                 .when(F.col("tier").isin("Gold", "Silver") & F.col("birthday_month").isin(8, 9, 10) & (F.col("r_lapse") < 0.20),
                       F.make_date(F.lit(2026), F.col("birthday_month"), F.lit(1) + (F.rand(28) * 25).cast("int")))
-                .when(F.col("r_lapse") < 0.12,
+                .when(F.col("r_lapse") < F.col("natural_p"),
                       F.date_add(F.lit(START).cast("date"), 120 + (F.rand(29) * (WINDOW_DAYS - 120)).cast("int")))
                 .otherwise(F.lit(None).cast("date")))
+    # members go quiet in app/email 30-60 days before their last purchase
+    .withColumn("quiet_lead_days", 30 + (F.abs(F.hash("id", F.lit(5))) % 31))
     .select("id", "member_id", "first_name", "last_name", "email", "tier", "join_date", "home_store_id", "home_store_format",
-            "preferred_channel", "birthday_month", "denim_affinity", "in_cohort", "lapse_date")
+            "preferred_channel", "birthday_month", "denim_affinity", "in_cohort", "lapse_date", "quiet_lead_days")
 )
-members_hidden.write.mode("overwrite").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
+members_hidden.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
 members_hidden = spark.table(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
 
 (members_hidden
@@ -228,9 +235,9 @@ members: 400000
 +------+-------+---------+----------+
 |  tier|members|in_cohort|will_lapse|
 +------+-------+---------+----------+
-|Bronze| 279565|        0|     33463|
-|  Gold|   9791|     1308|      1913|
-|Silver| 110644|    14784|     21397|
+|Bronze| 279565|        0|     26884|
+|  Gold|   9791|     1308|      1433|
+|Silver| 110644|    14784|     16233|
 +------+-------+---------+----------+
 ```
 
@@ -265,7 +272,7 @@ txn = (
     .withColumn("txn_id", F.concat(F.lit("T"), F.lpad(F.abs(F.hash("member_id", "k", "txn_ts")).cast("string"), 10, "0")))
     .select("txn_id", "member_id", "store_id", "channel", "txn_ts", "primary_category", "units", "basket_amount", "discount_pct")
 )
-txn.write.mode("overwrite").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
+txn.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
 txn = spark.table(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
 txn.repartition(24).write.mode("overwrite").json(f"{RAW}/transactions")
 
@@ -294,34 +301,34 @@ print("Monthly denim return rate (returns / denim transactions):")
 Output:
 
 ```text
-transactions: 1948914  returns: 162757
+transactions: 1984951  returns: 166342
 Monthly denim return rate (returns / denim transactions):
 +-------------------+----------+-------------+-----------+
 |month              |denim_txns|denim_returns|return_rate|
 +-------------------+----------+-------------+-----------+
-|2025-05-01 00:00:00|32961     |1233         |0.037      |
-|2025-06-01 00:00:00|33399     |2577         |0.077      |
-|2025-07-01 00:00:00|35735     |2851         |0.08       |
-|2025-08-01 00:00:00|37208     |2900         |0.078      |
-|2025-09-01 00:00:00|37412     |2828         |0.076      |
-|2025-10-01 00:00:00|39762     |3147         |0.079      |
-|2025-11-01 00:00:00|59005     |3770         |0.064      |
-|2025-12-01 00:00:00|62974     |4866         |0.077      |
-|2026-01-01 00:00:00|30038     |3855         |0.128      |
-|2026-02-01 00:00:00|27760     |2163         |0.078      |
-|2026-03-01 00:00:00|44509     |3041         |0.068      |
-|2026-04-01 00:00:00|44473     |3487         |0.078      |
-|2026-05-01 00:00:00|46722     |3706         |0.079      |
-|2026-06-01 00:00:00|45543     |6494         |0.143      |
-|2026-07-01 00:00:00|46305     |10325        |0.223      |
-|2026-08-01 00:00:00|45230     |9914         |0.219      |
-|2026-09-01 00:00:00|43339     |9519         |0.22       |
-|2026-10-01 00:00:00|43302     |9869         |0.228      |
+|2025-05-01 00:00:00|32787     |1175         |0.036      |
+|2025-06-01 00:00:00|33464     |2585         |0.077      |
+|2025-07-01 00:00:00|35441     |2717         |0.077      |
+|2025-08-01 00:00:00|37107     |2912         |0.078      |
+|2025-09-01 00:00:00|37527     |2916         |0.078      |
+|2025-10-01 00:00:00|39761     |3145         |0.079      |
+|2025-11-01 00:00:00|59792     |3929         |0.066      |
+|2025-12-01 00:00:00|63748     |4999         |0.078      |
+|2026-01-01 00:00:00|30537     |3816         |0.125      |
+|2026-02-01 00:00:00|28352     |2244         |0.079      |
+|2026-03-01 00:00:00|45616     |3031         |0.066      |
+|2026-04-01 00:00:00|45252     |3644         |0.081      |
+|2026-05-01 00:00:00|47940     |3709         |0.077      |
+|2026-06-01 00:00:00|46656     |6627         |0.142      |
+|2026-07-01 00:00:00|47724     |10450        |0.219      |
+|2026-08-01 00:00:00|47100     |10321        |0.219      |
+|2026-09-01 00:00:00|44946     |10190        |0.227      |
+|2026-10-01 00:00:00|45259     |10217        |0.226      |
 +-------------------+----------+-------------+-----------+
 ```
 
 ## Engagement events (~5M): the leading signal
-Members who will lapse go quiet in app/email roughly 25 days before their last purchase.
+Members who will lapse go quiet in app/email 30 to 60 days before their last purchase.
 
 ## Cell 11 (finished)
 
@@ -333,7 +340,7 @@ events = (
     .withColumn("k", F.explode(F.sequence(F.lit(1), F.col("n_ev"))))
     .withColumn("event_ts", rand_ts(52))
     .filter(F.to_date("event_ts") >= F.col("join_date"))
-    .filter(F.col("lapse_date").isNull() | (F.to_date("event_ts") <= F.date_sub("lapse_date", 25)))
+    .filter(F.col("lapse_date").isNull() | (F.to_date("event_ts") <= F.date_sub("lapse_date", F.col("quiet_lead_days"))))
     .withColumn("event_type", pick(F.rand(53), [("app_open", 40), ("email_open", 30), ("web_session", 20), ("email_click", 10)]))
     .withColumn("device", pick(F.rand(54), [("ios", 45), ("android", 35), ("web", 20)]))
     .withColumn("event_id", F.concat(F.lit("E"), F.lpad(F.abs(F.hash("member_id", "k", "event_ts")).cast("string"), 10, "0")))
@@ -346,7 +353,7 @@ print("engagement_events:", spark.read.json(f"{RAW}/engagement_events").count())
 Output:
 
 ```text
-engagement_events: 4102903
+engagement_events: 4174998
 ```
 
 ## Campaign touches (~1.5M)
@@ -399,12 +406,12 @@ print("campaign_touches:", touches.count())
 Output:
 
 ```text
-campaign_touches: 1254012
+campaign_touches: 1246286
 +----------+-------+-------------+
 |    period|touches|response_rate|
 +----------+-------+-------------+
 |before_cut| 366171|         0.34|
-| after_cut|  97869|        0.138|
+| after_cut|  97869|        0.139|
 +----------+-------+-------------+
 ```
 
@@ -436,16 +443,16 @@ Output:
 +-------------------+-------------+-------------+
 |month              |cohort_active|others_active|
 +-------------------+-------------+-------------+
-|2026-01-01 00:00:00|4724         |59716        |
-|2026-02-01 00:00:00|4488         |55857        |
-|2026-03-01 00:00:00|6512         |83133        |
-|2026-04-01 00:00:00|6547         |83115        |
-|2026-05-01 00:00:00|6683         |87088        |
-|2026-06-01 00:00:00|6437         |85630        |
-|2026-07-01 00:00:00|5255         |89388        |
-|2026-08-01 00:00:00|3737         |89906        |
-|2026-09-01 00:00:00|2962         |87789        |
-|2026-10-01 00:00:00|3020         |87672        |
+|2026-01-01 00:00:00|4724         |60812        |
+|2026-02-01 00:00:00|4488         |57073        |
+|2026-03-01 00:00:00|6512         |85150        |
+|2026-04-01 00:00:00|6547         |85378        |
+|2026-05-01 00:00:00|6683         |89609        |
+|2026-06-01 00:00:00|6437         |88333        |
+|2026-07-01 00:00:00|5255         |92357        |
+|2026-08-01 00:00:00|3737         |93110        |
+|2026-09-01 00:00:00|2962         |91179        |
+|2026-10-01 00:00:00|3020         |91137        |
 +-------------------+-------------+-------------+
 
 Raw extracts written:

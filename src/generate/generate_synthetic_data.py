@@ -180,7 +180,7 @@ members_hidden = (
     .select("id", "member_id", "first_name", "last_name", "email", "tier", "join_date", "home_store_id", "home_store_format",
             "preferred_channel", "birthday_month", "denim_affinity", "in_cohort", "lapse_date", "quiet_lead_days")
 )
-members_hidden.write.mode("overwrite").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
+members_hidden.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
 members_hidden = spark.table(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
 
 (members_hidden
@@ -223,7 +223,7 @@ txn = (
     .withColumn("txn_id", F.concat(F.lit("T"), F.lpad(F.abs(F.hash("member_id", "k", "txn_ts")).cast("string"), 10, "0")))
     .select("txn_id", "member_id", "store_id", "channel", "txn_ts", "primary_category", "units", "basket_amount", "discount_pct")
 )
-txn.write.mode("overwrite").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
+txn.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
 txn = spark.table(f"{CATALOG}.{GEN_SCHEMA}.txn_stage")
 txn.repartition(24).write.mode("overwrite").json(f"{RAW}/transactions")
 

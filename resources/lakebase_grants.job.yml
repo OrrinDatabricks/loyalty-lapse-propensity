@@ -1,0 +1,21 @@
+resources:
+  jobs:
+    lakebase_grant_app_access:
+      name: "[loyalty] 05 lakebase grants for the retention console"
+      description: Grants the app service principal SELECT on the synced worklist schema in Lakebase and prints what Postgres holds.
+      tasks:
+        - task_key: grant
+          notebook_task:
+            notebook_path: ../src/lakebase/grant_app_access.py
+            base_parameters:
+              app_name: loyalty-retention-console
+              project: ${var.lakebase_project}
+              pg_schema: ${var.schema}
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"
+            dependencies:
+              - "psycopg[binary]>=3.1"
+              - "databricks-sdk>=0.81.0"

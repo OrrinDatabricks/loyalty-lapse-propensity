@@ -1,0 +1,9 @@
+Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
+Updated jobs.lakebase_grant_app_access
+Files: 6 uploaded, 0 deleted
+Resources: 0 created, 1 changed, 0 deleted, 5 unchanged
+Run URL: https://fevm-loyalty-lapse-demo.cloud.databricks.com/jobs/1115802722617235/runs/20372419417266?o=7474649175147667
+
+2026-11-03 09:44:49 "[loyalty] 05 lakebase grants for the retention console" RUNNING
+2026-11-03 09:45:30 "[loyalty] 05 lakebase grants for the retention console" TERMINATED SUCCESS
+exit=0

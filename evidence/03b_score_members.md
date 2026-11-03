@@ -4,7 +4,7 @@ Exported from the job run with `databricks jobs export-run`; cell outputs are th
 
 # 03b Score active members and write the retention worklist
 
-Loads the `champion` model from Unity Catalog, scores every regular shopper (2+ purchases in the last 180 days) as of the latest
+Loads the `champion` model from Unity Catalog, scores every regular shopper (3+ purchases in the last 180 days) as of the latest
 transaction date, attaches plain-language risk drivers and a recommended action, and writes
 `member_retention_scores` (Change Data Feed enabled so Lakebase can sync it).
 
@@ -30,9 +30,9 @@ print("Scoring as of", AS_OF)
 Output:
 
 ```text
-{"ts": "2026-11-03 17:22:22.607", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzc3NzQ0MjQ0MjQ0MTMzMxABIAEyJDAxYTFhMjZkLTZhOTgtN2VjOC1hMmJhLWZiZDc4MTg3Y2NhMjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgsI6q+o1wYQgOTsQFACWAFgAWiTiZ+H9sSjDYgBAA==.", "context": {}}
-{"ts": "2026-11-03 17:22:22.607", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzc3NzQ0MjQ0MjQ0MTMzMxABIAEyJDAxYTFhMjZkLTZhOTgtN2VjOC1hMmJhLWZiZDc4MTg3Y2NhMjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgsI6q+o1wYQgOTsQFACWAFgAWiTiZ+H9sSjDYgBAA==.", "context": {}}
-{"ts": "2026-11-03 17:22:22.607", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzc3NzQ0MjQ0MjQ0MTMzMxABIAEyJDAxYTFhMjZkLTZhOTgtN2VjOC1hMmJhLWZiZDc4MTg3Y2NhMjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgsI6q+o1wYQgOTsQFACWAFgAWiTiZ+H9sSjDYgBAA==.", "context": {}}
+{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
+{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
+{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
 
 Scoring as of 2026-10-30
 ```
@@ -49,16 +49,18 @@ for c in NUMERIC_FEATURES:
 
 mlflow.set_registry_uri("databricks-uc")
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
-predict = mlflow.pyfunc.spark_udf(spark, f"models:/{MODEL_NAME}@champion", result_type="double",
+predict = mlflow.pyfunc.spark_udf(spark, f"models:/{MODEL_NAME}@champion", result_type="array<double>",
                                   env_manager="local")
-scored = feats.withColumn("p_lapse", F.round(predict(*[F.col(c) for c in FEATURES]), 4))
+# predict_proba returns [P(stay), P(lapse)]; keep the positive class
+scored = feats.withColumn("proba", predict(*[F.col(c) for c in FEATURES])) \
+              .withColumn("p_lapse", F.round(F.element_at("proba", 2), 4)).drop("proba")
 ```
 
 Output:
 
 ```text
-2026/11/03 17:22:37 WARNING mlflow.pyfunc: Calling `spark_udf()` with `env_manager="local"` does not recreate the same environment that was used during training, which may lead to errors or inaccurate predictions. We recommend specifying `env_manager="conda"`, which automatically recreates the environment that was used to train the model and performs inference in the recreated environment.
-2026/11/03 17:22:37 INFO mlflow.models.flavor_backend_registry: Selected backend for flavor 'python_function'
+2026/11/03 17:33:51 WARNING mlflow.pyfunc: Calling `spark_udf()` with `env_manager="local"` does not recreate the same environment that was used during training, which may lead to errors or inaccurate predictions. We recommend specifying `env_manager="conda"`, which automatically recreates the environment that was used to train the model and performs inference in the recreated environment.
+2026/11/03 17:33:51 INFO mlflow.models.flavor_backend_registry: Selected backend for flavor 'python_function'
 ```
 
 ## Risk drivers and recommended action
@@ -125,61 +127,60 @@ out.filter("risk_band = 'High'").orderBy(F.desc("annual_value_at_risk")) \
 Output:
 
 ```text
-Scored members: 170854
+Scored members: 101089
 +---------+-------+-----------+-----------------+
 |risk_band|members|avg_p_lapse|value_at_risk_usd|
 +---------+-------+-----------+-----------------+
-|     High|  49382|        1.0|      1.1771611E7|
-|      Low| 121472|        0.0|              0.0|
+|     High|   1408|      0.706|        1181736.0|
+|   Medium|  36295|      0.449|        4966271.0|
+|      Low|  63386|      0.198|        8262119.0|
 +---------+-------+-----------+-----------------+
 
 High-risk members by tier and home store format:
 +------+-----------------+-----+
 |  tier|home_store_format|count|
 +------+-----------------+-----+
-|Bronze|             mall|17780|
-|Bronze|            strip|10296|
-|Bronze|           outlet| 8346|
-|Bronze|           online| 6517|
-|Silver|             mall| 3948|
-|Silver|            strip|  661|
-|  Gold|             mall|  638|
-|Silver|           outlet|  532|
-|Silver|           online|  436|
-|  Gold|            strip|   96|
-|  Gold|           outlet|   76|
-|  Gold|           online|   56|
+|Silver|             mall|  869|
+|  Gold|             mall|  391|
+|  Gold|            strip|   26|
+|  Gold|           outlet|   23|
+|Bronze|             mall|   16|
+|Bronze|           online|   15|
+|Bronze|            strip|   13|
+|Bronze|           outlet|   13|
+|  Gold|           online|   12|
+|Silver|           online|   12|
+|Silver|           outlet|   10|
+|Silver|            strip|    8|
 +------+-----------------+-----+
 
 Primary risk driver among High risk:
 +-------------------------+---------------------------------------------------------------+-----+
 |primary_driver           |recommended_action                                             |count|
 +-------------------------+---------------------------------------------------------------+-----+
-|purchase_recency         |Win-back offer tied to top category                            |20560|
-|none                     |Monitor; no outreach                                           |12418|
-|fit_returns              |Fit-guarantee outreach: free exchange + stylist fit consult    |4651 |
-|purchase_recency         |Switch channel; one high-value offer, pause bulk sends         |3627 |
-|engagement_drop          |App push + personalized new-arrivals email in preferred channel|3314 |
-|reward_devalued          |Restore $20 birthday reward with 14-day expiry                 |2128 |
-|unresponsive_to_campaigns|Switch channel; one high-value offer, pause bulk sends         |1336 |
-|discount_dependent       |Monitor; no outreach                                           |757  |
-|engagement_drop          |Fit-guarantee outreach: free exchange + stylist fit consult    |460  |
-|engagement_drop          |Restore $20 birthday reward with 14-day expiry                 |131  |
+|purchase_recency         |Win-back offer tied to top category                            |634  |
+|purchase_recency         |Switch channel; one high-value offer, pause bulk sends         |430  |
+|engagement_drop          |App push + personalized new-arrivals email in preferred channel|201  |
+|fit_returns              |Fit-guarantee outreach: free exchange + stylist fit consult    |80   |
+|engagement_drop          |Fit-guarantee outreach: free exchange + stylist fit consult    |43   |
+|reward_devalued          |Restore $20 birthday reward with 14-day expiry                 |14   |
+|none                     |Monitor; no outreach                                           |5    |
+|unresponsive_to_campaigns|Switch channel; one high-value offer, pause bulk sends         |1    |
 +-------------------------+---------------------------------------------------------------+-----+
 
 +---------+----+-------+----------------+--------------------+---------------------------------------------------------------+
 |member_id|tier|p_lapse|primary_driver  |annual_value_at_risk|recommended_action                                             |
 +---------+----+-------+----------------+--------------------+---------------------------------------------------------------+
-|M0057811 |Gold|1.0    |engagement_drop |6034.66             |App push + personalized new-arrivals email in preferred channel|
-|M0231566 |Gold|1.0    |engagement_drop |5969.41             |Fit-guarantee outreach: free exchange + stylist fit consult    |
-|M0369815 |Gold|1.0    |engagement_drop |5838.2              |App push + personalized new-arrivals email in preferred channel|
-|M0393047 |Gold|1.0    |purchase_recency|5563.13             |Switch channel; one high-value offer, pause bulk sends         |
-|M0224582 |Gold|1.0    |engagement_drop |5287.68             |Fit-guarantee outreach: free exchange + stylist fit consult    |
-|M0039285 |Gold|1.0    |fit_returns     |5174.81             |Fit-guarantee outreach: free exchange + stylist fit consult    |
-|M0067395 |Gold|1.0    |engagement_drop |5154.57             |App push + personalized new-arrivals email in preferred channel|
-|M0054944 |Gold|1.0    |purchase_recency|5095.83             |Win-back offer tied to top category                            |
-|M0365617 |Gold|1.0    |engagement_drop |5084.07             |App push + personalized new-arrivals email in preferred channel|
-|M0029648 |Gold|1.0    |purchase_recency|4809.31             |Win-back offer tied to top category                            |
+|M0184345 |Gold|0.8267 |engagement_drop |4557.58             |App push + personalized new-arrivals email in preferred channel|
+|M0231566 |Gold|0.7968 |engagement_drop |4529.39             |App push + personalized new-arrivals email in preferred channel|
+|M0057811 |Gold|0.6627 |engagement_drop |4476.53             |Fit-guarantee outreach: free exchange + stylist fit consult    |
+|M0054944 |Gold|0.8556 |purchase_recency|4455.02             |Switch channel; one high-value offer, pause bulk sends         |
+|M0067395 |Gold|0.8446 |engagement_drop |4091.21             |App push + personalized new-arrivals email in preferred channel|
+|M0217519 |Gold|0.8756 |purchase_recency|3887.49             |Win-back offer tied to top category                            |
+|M0039285 |Gold|0.7346 |purchase_recency|3775.68             |Win-back offer tied to top category                            |
+|M0089476 |Gold|0.865  |engagement_drop |3760.35             |App push + personalized new-arrivals email in preferred channel|
+|M0224582 |Gold|0.7774 |purchase_recency|3717.99             |Win-back offer tied to top category                            |
+|M0182022 |Gold|0.819  |purchase_recency|3525.77             |Win-back offer tied to top category                            |
 +---------+----+-------+----------------+--------------------+---------------------------------------------------------------+
 only showing top 10 rows
 ```
