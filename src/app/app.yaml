@@ -12,3 +12,5 @@ env:
     value: loyalty
   - name: APP_SCHEMA
     value: retention_app
+  - name: LAKEBASE_PROJECT
+    value: loyalty-lapse

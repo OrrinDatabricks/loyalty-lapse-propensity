@@ -81,3 +81,75 @@ KeyError: 'spec'
     "tier": "Gold"
   }
 ]
+
+echo
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo "## Write-back: decisions the console wrote to Lakebase"
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo "The app's service principal created schema \`retention_app\` and table \`outreach_actions\` on first start (CAN_CONNECT_AND_CREATE). Rows below were recorded from the Retention worklist tab and read back through the federation catalog."
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+databricks experimental aitools tools query --warehouse $W --profile $P "SELECT action_id, member_id, decision, action, channel, p_lapse, value_at_risk, decided_by, decided_at FROM loyalty_lakebase.retention_app.outreach_actions ORDER BY decided_at"
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo "## Tables now present in the Postgres database"
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+echo
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+databricks experimental aitools tools query --warehouse $W --profile $P "SELECT table_schema, table_name FROM loyalty_lakebase.information_schema.tables WHERE table_schema IN ('loyalty','retention_app') ORDER BY 1,2"
+/var/folders/gm/f5htzmcs4090j67lzqy2s27r0000gp/T//kp.mlp7gF: line 3: return: can only `return' from a function or sourced script
+
+## Write-back: decisions the console wrote to Lakebase
+
+The app's service principal created schema `retention_app` and table `outreach_actions` on first start (CAN_CONNECT_AND_CREATE). Rows below were recorded from the Retention worklist tab and read back through the federation catalog.
+
+[
+  {
+    "action": "App push + personalized new-arrivals email in preferred channel",
+    "action_id": "1",
+    "channel": "email",
+    "decided_at": "2026-11-03T19:22:46.917Z",
+    "decided_by": "orrin.edenfield@databricks.com",
+    "decision": "approve",
+    "member_id": "M0184345",
+    "p_lapse": "0.8267",
+    "value_at_risk": "4557.58"
+  },
+  {
+    "action": "App push + personalized new-arrivals email in preferred channel",
+    "action_id": "2",
+    "channel": "email",
+    "decided_at": "2026-11-03T19:25:35.627Z",
+    "decided_by": "orrin.edenfield@databricks.com",
+    "decision": "approve",
+    "member_id": "M0184345",
+    "p_lapse": "0.8267",
+    "value_at_risk": "4557.58"
+  }
+]
+
+## Tables now present in the Postgres database
+
+[
+  {
+    "table_name": "member_retention_scores",
+    "table_schema": "loyalty"
+  },
+  {
+    "table_name": "outreach_actions",
+    "table_schema": "retention_app"
+  }
+]

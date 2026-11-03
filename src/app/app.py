@@ -26,6 +26,21 @@ APP_SCHEMA = os.getenv("APP_SCHEMA", "retention_app")  # app-owned write-back sc
 cfg = Config()
 w = WorkspaceClient()
 
+# Lakebase connection details. The platform injects PG* variables for the postgres app resource; anything missing
+# falls back to the project's known production endpoint so the console still comes up.
+LAKEBASE_PROJECT = os.getenv("LAKEBASE_PROJECT", "loyalty-lapse")
+LAKEBASE_ENDPOINT = os.getenv("LAKEBASE_ENDPOINT") or f"projects/{LAKEBASE_PROJECT}/branches/production/endpoints/primary"
+PGDATABASE = os.getenv("PGDATABASE", "databricks_postgres")
+PGUSER = os.getenv("PGUSER") or os.getenv("DATABRICKS_CLIENT_ID")
+print("lakebase env:", {k: v for k, v in os.environ.items() if k.startswith(("PG", "LAKEBASE"))}, flush=True)
+
+
+def pg_host():
+    h = os.getenv("PGHOST")
+    if not h:
+        h = w.postgres.get_endpoint(name=LAKEBASE_ENDPOINT).status.hosts.host
+    return h
+
 
 # ---------- Lakebase (OLTP: worklist reads + outreach writes) ----------
 @st.cache_resource
@@ -37,9 +52,9 @@ def pg_conn():
     """psycopg connection with an OAuth token refreshed every 50 minutes."""
     s = pg_state()
     if s["conn"] is None or s["conn"].closed or time.time() - s["token_at"] > 50 * 60:
-        token = w.postgres.generate_database_credential(endpoint=os.environ["LAKEBASE_ENDPOINT"]).token
-        s["conn"] = psycopg.connect(host=os.environ["PGHOST"], port=int(os.environ.get("PGPORT", "5432")),
-                                    dbname=os.environ["PGDATABASE"], user=os.environ["PGUSER"],
+        token = w.postgres.generate_database_credential(endpoint=LAKEBASE_ENDPOINT).token
+        s["conn"] = psycopg.connect(host=pg_host(), port=int(os.environ.get("PGPORT", "5432")),
+                                    dbname=PGDATABASE, user=PGUSER,
                                     password=token, sslmode="require", autocommit=True)
         s["token_at"] = time.time()
         init_app_schema(s["conn"])

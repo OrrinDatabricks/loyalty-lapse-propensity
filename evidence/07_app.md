@@ -79,3 +79,57 @@ exit=0
 2026-11-03T17:40:51Z [BUILD] [INFO] Deployment successful
 2026-11-03T17:42:28Z [HTTP] 75.125.237.43 - - [03/Nov/2026:17:42:28 +0000] "GET / HTTP/1.1" 302 499 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.
 ```
+
+echo
+
+echo "## Runtime: Lakebase variables injected for the postgres app resource (from the app log)"
+
+echo
+
+echo '```text'
+
+databricks apps logs loyalty-retention-console --profile $P 2>&1
+
+grep -m1 "lakebase env: {"
+
+cut -c1-400
+
+echo '```'
+
+echo
+
+echo "Note: the \`postgres\` resource injects PGHOST, PGPORT, PGDATABASE, PGUSER (the app service principal), PGAPPNAME and PGSSLMODE, but not LAKEBASE_ENDPOINT; the app derives the endpoint path from LAKEBASE_PROJECT and mints its own OAuth token with the SDK."
+
+echo
+
+echo "## User activity (from the app log)"
+
+echo
+
+echo '```text'
+
+databricks apps logs loyalty-retention-console --profile $P 2>&1
+
+grep -E '"GET / HTTP|"POST /_stcore'
+
+tail -3
+
+cut -c1-200
+
+echo '```'
+
+## Runtime: Lakebase variables injected for the postgres app resource (from the app log)
+
+```text
+2026-11-03T19:22:18Z [APP] lakebase env: {'PG_SCHEMA': 'loyalty', 'LAKEBASE_PROJECT': 'loyalty-lapse', 'PGHOST': 'ep-green-king-d1ra07lx.database.us-west-2.cloud.databricks.com', 'PGDATABASE': 'databricks_postgres', 'PGPORT': '5432', 'PGUSER': '29d247c7-e20d-45b6-a2b1-242c0b67abd6', 'PGAPPNAME': 'loyalty-retention-console', 'PGSSLMODE': 'require'}
+```
+
+Note: the `postgres` resource injects PGHOST, PGPORT, PGDATABASE, PGUSER (the app service principal), PGAPPNAME and PGSSLMODE, but not LAKEBASE_ENDPOINT; the app derives the endpoint path from LAKEBASE_PROJECT and mints its own OAuth token with the SDK.
+
+## User activity (from the app log)
+
+```text
+2026-11-03T19:14:13Z [HTTP] 75.125.237.43 - - [03/Nov/2026:19:14:13 +0000] "GET / HTTP/1.1" 302 499 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/1
+2026-11-03T19:14:22Z [HTTP] 75.125.237.43 - 6255842418859349@7474649175147667 [03/Nov/2026:19:14:22 +0000] "GET / HTTP/1.1" 200 460 "https://fevm-loyalty-lapse-demo.cloud.databricks.com/" "Mozilla/5.0
+2026-11-03T19:22:15Z [HTTP] 75.125.237.43 - 6255842418859349@7474649175147667 [03/Nov/2026:19:22:15 +0000] "GET / HTTP/1.1" 304 0 "https://fevm-loyalty-lapse-demo.cloud.databricks.com/" "Mozilla/5.0 (
+```

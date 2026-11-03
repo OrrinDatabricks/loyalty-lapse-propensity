@@ -38,7 +38,7 @@ deliver them.
 | `evidence/03a_train_lapse_model.md` | Executed training notebook: lapse rates by snapshot, hold-out metrics, decile table, model registration, permutation importance |
 | `evidence/03b_score_members.md` | Executed scoring notebook: risk band distribution, drivers, top members by value at risk |
 | `evidence/04_governance.md` | Executed governance notebook: comments applied, tags, metric view queries, grants |
-| `evidence/05_lakebase.md` | Synced table status and queries against the synced Postgres table through the `loyalty_lakebase` federation catalog |
+| `evidence/05_lakebase.md` | Synced table status, queries against the synced Postgres table, and the `retention_app.outreach_actions` rows the console wrote back, all read through the `loyalty_lakebase` federation catalog |
 | `evidence/05b_lakebase_grants.md` | Executed notebook: GRANTs to the app service principal over the Postgres wire protocol, tables visible in Postgres, write-back table contents |
 | `evidence/05_lakebase_sync.log`, `evidence/05b_lakebase_grants_run.log` | CLI output for synced table creation and the grants job run |
 | `evidence/06_genie_agent.md` | Genie Agent creation output and Conversation API answers to the benchmark questions |
