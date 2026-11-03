@@ -50,20 +50,20 @@ train_df.unionByName(test_df).groupBy("as_of_date", "tier").agg(F.count("*").ali
 Output:
 
 ```text
-Training rows: 509407  Hold-out rows: 263764
+Training rows: 315345  Hold-out rows: 161095
 Lapse rate by snapshot and tier:
 +----------+------+-------+----------+
 |as_of_date|  tier|members|lapse_rate|
 +----------+------+-------+----------+
-|2026-04-30|Bronze| 149352|      0.53|
-|2026-04-30|  Gold|   9545|     0.108|
-|2026-04-30|Silver|  96755|     0.275|
-|2026-06-30|Bronze| 148973|     0.525|
-|2026-06-30|  Gold|   9342|     0.142|
-|2026-06-30|Silver|  95440|     0.305|
-|2026-07-31|Bronze| 157902|     0.527|
-|2026-07-31|  Gold|   9304|     0.176|
-|2026-07-31|Silver|  96558|     0.331|
+|2026-04-30|Bronze|  77234|     0.499|
+|2026-04-30|  Gold|   9238|       0.1|
+|2026-04-30|Silver|  77440|     0.255|
+|2026-06-30|Bronze|  69836|     0.488|
+|2026-06-30|  Gold|   8806|     0.131|
+|2026-06-30|Silver|  72791|      0.28|
+|2026-07-31|Bronze|  76741|     0.491|
+|2026-07-31|  Gold|   8864|     0.166|
+|2026-07-31|Silver|  75490|     0.307|
 +----------+------+-------+----------+
 ```
 
@@ -133,18 +133,18 @@ for k, v in metrics.items():
 Output:
 
 ```text
-Successfully registered model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
+Registered model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model' already exists. Creating a new version of this model...
 
-Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 1
+Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 2
 Hold-out metrics (features as of 2026-07-31 , label window = next 90 days):
-  holdout_auc              0.6726
-  holdout_avg_precision    0.5894
-  precision_at_10pct       0.6404
-  recall_at_10pct          0.1447
-  lift_at_10pct            1.4466
-  base_lapse_rate          0.4427
+  holdout_auc              0.6894
+  holdout_avg_precision    0.5531
+  precision_at_10pct       0.6033
+  recall_at_10pct          0.1560
+  lift_at_10pct            1.5597
+  base_lapse_rate          0.3868
 
-Created version '1' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
+Created version '2' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
 ```
 
 ## Business read of the hold-out: revenue at risk captured by the top decile
@@ -172,18 +172,18 @@ Output:
 
 ```text
 decile  members  actual_lapse_rate  avg_score  spend_12m_total  lapsed_spend_12m
-     1    26377              0.640      0.630        4446141.0         3226352.0
-     2    26376              0.571      0.570        2900261.0         1693056.0
-     3    26376              0.561      0.554        3498177.0         2010055.0
-     4    26377              0.544      0.535        4242881.0         2376578.0
-     5    26376              0.520      0.499        5499951.0         2976195.0
-     6    26376              0.474      0.443        8149094.0         3958624.0
-     7    26377              0.392      0.367        8854543.0         3596831.0
-     8    26376              0.331      0.314       11122490.0         3768889.0
-     9    26376              0.262      0.242       16378304.0         4342747.0
-    10    26377              0.132      0.119       35185807.0         3800081.0
+     1    16110              0.603      0.594        3526249.0         2464163.0
+     2    16109              0.556      0.543        3027007.0         1735509.0
+     3    16110              0.520      0.506        3791458.0         2068502.0
+     4    16109              0.487      0.460        4472855.0         2263923.0
+     5    16110              0.446      0.403        6014830.0         2799878.0
+     6    16109              0.366      0.342        6367885.0         2398466.0
+     7    16109              0.321      0.299        7756128.0         2547835.0
+     8    16110              0.264      0.250        9628974.0         2602544.0
+     9    16109              0.206      0.185       13065303.0         2698096.0
+    10    16110              0.097      0.084       26303555.0         2148453.0
 
-Top decile holds $3,226,352 of trailing-12-month spend from members who actually lapsed (10.2% of all lapsed spend) in 10% of the outreach volume.
+Top decile holds $2,464,163 of trailing-12-month spend from members who actually lapsed (10.4% of all lapsed spend) in 10% of the outreach volume.
 ```
 
 ## Promote to champion
@@ -210,18 +210,18 @@ print(imp_df.head(12).to_string(index=False))
 Output:
 
 ```text
-loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v1 -> alias 'champion'
+loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v2 -> alias 'champion'
                    feature  importance
-                      tier    0.034737
-days_since_last_engagement    0.033020
-     lifetime_transactions    0.015938
-  days_since_last_purchase    0.008804
-               tenure_days    0.007303
-         home_store_format    0.006018
-          transactions_12m    0.005857
-              touches_180d    0.005576
-               events_180d    0.003519
-               denim_share    0.002938
-       engagement_velocity    0.000652
-         preferred_channel    0.000460
+                      tier    0.033990
+days_since_last_engagement    0.033535
+     lifetime_transactions    0.019952
+         home_store_format    0.013217
+  days_since_last_purchase    0.009117
+          transactions_12m    0.008750
+              touches_180d    0.008611
+               tenure_days    0.006719
+               denim_share    0.005698
+               events_180d    0.003597
+       engagement_velocity    0.001745
+                avg_basket    0.000452
 ```

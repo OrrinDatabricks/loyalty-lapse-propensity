@@ -1,0 +1,42 @@
+Creating synced table loyalty_lakebase.loyalty.member_retention_scores (TRIGGERED mode; re-sync by running its pipeline after each scoring run)
+{
+  "name": "synced_tables/loyalty_lakebase.loyalty.member_retention_scores",
+  "spec": {
+    "branch": "projects/loyalty-lapse/branches/production",
+    "create_database_objects_if_missing": true,
+    "new_pipeline_spec": {
+      "storage_catalog": "loyalty_lapse_demo_catalog",
+      "storage_schema": "loyalty"
+    },
+    "postgres_database": "databricks_postgres",
+    "primary_key_columns": [
+      "member_id"
+    ],
+    "scheduling_policy": "TRIGGERED",
+    "source_table_full_name": "loyalty_lapse_demo_catalog.loyalty.member_retention_scores"
+  },
+  "status": {
+    "detailed_state": "SYNCED_TABLE_PROVISIONING_PIPELINE_RESOURCES",
+    "message": "Synced table is currently pending setup of pipeline resources. Check latest status in Delta Live Tables: https://fevm-loyalty-lapse-demo.cloud.databricks.com#joblist/pipelines/7d553664-4ccc-447c-b689-6e1530dbd897/updates/f477c5cf-6973-4529-a9f1-d7de648c3637",
+    "ongoing_sync_progress": {},
+    "pipeline_id": "7d553664-4ccc-447c-b689-6e1530dbd897",
+    "project": "projects/loyalty-lapse",
+    "unity_catalog_provisioning_state": "ACTIVE"
+  },
+  "synced_table_id": "loyalty_lakebase.loyalty.member_retention_scores",
+  "uid": "2333a517-f503-4f69-8162-020762857967"
+}
+{
+  "name": "synced_tables/loyalty_lakebase.loyalty.member_retention_scores",
+  "status": {
+    "detailed_state": "SYNCED_TABLE_PROVISIONING_PIPELINE_RESOURCES",
+    "message": "Synced table is currently pending setup of pipeline resources. Check latest status in Delta Live Tables: https://fevm-loyalty-lapse-demo.cloud.databricks.com#joblist/pipelines/7d553664-4ccc-447c-b689-6e1530dbd897/updates/f477c5cf-6973-4529-a9f1-d7de648c3637",
+    "ongoing_sync_progress": {},
+    "pipeline_id": "7d553664-4ccc-447c-b689-6e1530dbd897",
+    "project": "projects/loyalty-lapse",
+    "unity_catalog_provisioning_state": "ACTIVE"
+  },
+  "synced_table_id": "loyalty_lakebase.loyalty.member_retention_scores",
+  "uid": "2333a517-f503-4f69-8162-020762857967"
+}
+exit=0

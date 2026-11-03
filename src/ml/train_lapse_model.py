@@ -92,9 +92,10 @@ with mlflow.start_run(run_name="hgb_lapse_v1") as run:
                        "test_snapshot": TEST_SNAPSHOT, "n_train": len(train_pd), "n_test": len(test_pd),
                        "label_horizon_days": 90, "n_iter_fitted": clf.n_iter_})
     mlflow.log_metrics(metrics)
-    sig = infer_signature(X_test.head(100), p_test[:100])
+    # pyfunc predict must return probabilities (n x 2), not class labels, so scoring can take P(lapse)
+    sig = infer_signature(X_test.head(100), model.predict_proba(X_test.head(100)))
     info = mlflow.sklearn.log_model(model, artifact_path="model", signature=sig, input_example=X_test.head(5),
-                                    registered_model_name=MODEL_NAME)
+                                    pyfunc_predict_fn="predict_proba", registered_model_name=MODEL_NAME)
     run_id = run.info.run_id
 
 print("Registered:", MODEL_NAME, "version", info.registered_model_version)

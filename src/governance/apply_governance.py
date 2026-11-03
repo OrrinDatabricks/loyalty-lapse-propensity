@@ -2,6 +2,8 @@
 # MAGIC %md
 # MAGIC # 04 Unity Catalog governance: comments, tags, certified tables, metric views, grants
 # MAGIC
+# MAGIC Note: this metastore has a tag policy on the key `domain` (finance, sales, supply_chain, quality, hr, operations), so the build uses `data_domain` for the loyalty data product. The policy rejected the first attempt, which is the behavior you want from governed tags.
+# MAGIC
 # MAGIC The small UC investments that make agents accurate: every gold column described, tables tagged with
 # MAGIC domain and certification, PII flagged, governed metric views so "lapse rate" means one thing everywhere,
 # MAGIC and least-privilege grants for the analyst and app principals.
@@ -108,14 +110,14 @@ for table, cols in COLUMN_COMMENTS.items():
 # COMMAND ----------
 
 TABLE_TAGS = {
-    "gold_member_360":             {"domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "crm_analytics"},
-    "gold_member_activity_monthly": {"domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "crm_analytics"},
-    "member_retention_scores":     {"domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "data_science", "model": "loyalty_lapse_model"},
-    "silver_transactions":         {"domain": "loyalty", "layer": "silver", "certified": "false"},
-    "silver_members":              {"domain": "loyalty", "layer": "silver", "certified": "false", "contains_pii": "true"},
-    "silver_engagement_events":    {"domain": "loyalty", "layer": "silver", "certified": "false"},
-    "silver_campaign_touches":     {"domain": "loyalty", "layer": "silver", "certified": "false"},
-    "silver_returns":              {"domain": "loyalty", "layer": "silver", "certified": "false"},
+    "gold_member_360":             {"data_domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "crm_analytics"},
+    "gold_member_activity_monthly": {"data_domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "crm_analytics"},
+    "member_retention_scores":     {"data_domain": "loyalty", "layer": "gold", "certified": "true", "owner_team": "data_science", "model": "loyalty_lapse_model"},
+    "silver_transactions":         {"data_domain": "loyalty", "layer": "silver", "certified": "false"},
+    "silver_members":              {"data_domain": "loyalty", "layer": "silver", "certified": "false", "contains_pii": "true"},
+    "silver_engagement_events":    {"data_domain": "loyalty", "layer": "silver", "certified": "false"},
+    "silver_campaign_touches":     {"data_domain": "loyalty", "layer": "silver", "certified": "false"},
+    "silver_returns":              {"data_domain": "loyalty", "layer": "silver", "certified": "false"},
 }
 for table, tags in TABLE_TAGS.items():
     tag_list = ", ".join(f"'{k}' = '{v}'" for k, v in tags.items())
@@ -125,7 +127,7 @@ for col in ("email", "first_name", "last_name"):
     run(f"ALTER TABLE {FQ('gold_member_360')} ALTER COLUMN {col} SET TAGS ('pii' = 'true', 'pii_class' = 'direct_identifier')")
     run(f"ALTER TABLE {FQ('silver_members')} ALTER COLUMN {col} SET TAGS ('pii' = 'true', 'pii_class' = 'direct_identifier')")
 
-run(f"ALTER SCHEMA {C}.{S} SET TAGS ('domain' = 'loyalty', 'data_product' = 'loyalty_lapse_propensity')")
+run(f"ALTER SCHEMA {C}.{S} SET TAGS ('data_domain' = 'loyalty', 'data_product' = 'loyalty_lapse_propensity')")
 
 # COMMAND ----------
 
@@ -325,7 +327,7 @@ $$
 """)
 
 for mv in ("loyalty_member_metrics", "loyalty_activity_metrics", "retention_risk_metrics"):
-    run(f"ALTER VIEW {FQ(mv)} SET TAGS ('domain' = 'loyalty', 'layer' = 'metrics', 'certified' = 'true')")
+    run(f"ALTER VIEW {FQ(mv)} SET TAGS ('data_domain' = 'loyalty', 'layer' = 'metrics', 'certified' = 'true')")
 
 # COMMAND ----------
 

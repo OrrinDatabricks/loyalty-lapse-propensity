@@ -160,18 +160,25 @@ members_hidden = (
     .withColumn("denim_affinity", F.round(F.pow(F.rand(25), 1.3), 3))
     .join(store_formats, "home_store_id", "left")
     .withColumn("in_cohort", (F.col("tier").isin("Gold", "Silver")) & (F.col("home_store_format") == "mall") & (F.col("denim_affinity") > 0.6))
-    # lapse mechanics: cohort lapses mid-June to early Sept; post-cut birthday members in Aug-Oct; everyone else at a low natural rate
+    # lapse mechanics: cohort lapses mid-June to early Sept; post-cut birthday members in Aug-Oct; everyone else at a
+    # natural rate that rises with observable traits (no marketing opt-in, short tenure, Bronze) so it is learnable
     .withColumn("r_lapse", F.rand(26))
+    .withColumn("natural_p", F.lit(0.04)
+                + F.when(F.col("preferred_channel") == "none", 0.14).otherwise(0.0)
+                + F.when(F.col("tenure_days") < 240, 0.10).otherwise(0.0)
+                + F.when(F.col("tier") == "Bronze", 0.03).otherwise(0.0))
     .withColumn("lapse_date",
                 F.when(F.col("in_cohort") & (F.col("r_lapse") < 0.55),
                        F.date_add(F.lit("2026-06-15").cast("date"), (F.rand(27) * 75).cast("int")))
                 .when(F.col("tier").isin("Gold", "Silver") & F.col("birthday_month").isin(8, 9, 10) & (F.col("r_lapse") < 0.20),
                       F.make_date(F.lit(2026), F.col("birthday_month"), F.lit(1) + (F.rand(28) * 25).cast("int")))
-                .when(F.col("r_lapse") < 0.12,
+                .when(F.col("r_lapse") < F.col("natural_p"),
                       F.date_add(F.lit(START).cast("date"), 120 + (F.rand(29) * (WINDOW_DAYS - 120)).cast("int")))
                 .otherwise(F.lit(None).cast("date")))
+    # members go quiet in app/email 30-60 days before their last purchase
+    .withColumn("quiet_lead_days", 30 + (F.abs(F.hash("id", F.lit(5))) % 31))
     .select("id", "member_id", "first_name", "last_name", "email", "tier", "join_date", "home_store_id", "home_store_format",
-            "preferred_channel", "birthday_month", "denim_affinity", "in_cohort", "lapse_date")
+            "preferred_channel", "birthday_month", "denim_affinity", "in_cohort", "lapse_date", "quiet_lead_days")
 )
 members_hidden.write.mode("overwrite").saveAsTable(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
 members_hidden = spark.table(f"{CATALOG}.{GEN_SCHEMA}.member_truth")
@@ -244,7 +251,7 @@ print("Monthly denim return rate (returns / denim transactions):")
 # COMMAND ----------
 
 # MAGIC %md ## Engagement events (~5M): the leading signal
-# MAGIC Members who will lapse go quiet in app/email roughly 25 days before their last purchase.
+# MAGIC Members who will lapse go quiet in app/email 30 to 60 days before their last purchase.
 
 # COMMAND ----------
 
@@ -255,7 +262,7 @@ events = (
     .withColumn("k", F.explode(F.sequence(F.lit(1), F.col("n_ev"))))
     .withColumn("event_ts", rand_ts(52))
     .filter(F.to_date("event_ts") >= F.col("join_date"))
-    .filter(F.col("lapse_date").isNull() | (F.to_date("event_ts") <= F.date_sub("lapse_date", 25)))
+    .filter(F.col("lapse_date").isNull() | (F.to_date("event_ts") <= F.date_sub("lapse_date", F.col("quiet_lead_days"))))
     .withColumn("event_type", pick(F.rand(53), [("app_open", 40), ("email_open", 30), ("web_session", 20), ("email_click", 10)]))
     .withColumn("device", pick(F.rand(54), [("ios", 45), ("android", 35), ("web", 20)]))
     .withColumn("event_id", F.concat(F.lit("E"), F.lpad(F.abs(F.hash("member_id", "k", "event_ts")).cast("string"), 10, "0")))

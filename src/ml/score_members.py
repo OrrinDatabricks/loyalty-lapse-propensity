@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # 03b Score active members and write the retention worklist
 # MAGIC
-# MAGIC Loads the `champion` model from Unity Catalog, scores every regular shopper (2+ purchases in the last 180 days) as of the latest
+# MAGIC Loads the `champion` model from Unity Catalog, scores every regular shopper (3+ purchases in the last 180 days) as of the latest
 # MAGIC transaction date, attaches plain-language risk drivers and a recommended action, and writes
 # MAGIC `member_retention_scores` (Change Data Feed enabled so Lakebase can sync it).
 
@@ -34,9 +34,11 @@ for c in NUMERIC_FEATURES:
 
 mlflow.set_registry_uri("databricks-uc")
 FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
-predict = mlflow.pyfunc.spark_udf(spark, f"models:/{MODEL_NAME}@champion", result_type="double",
+predict = mlflow.pyfunc.spark_udf(spark, f"models:/{MODEL_NAME}@champion", result_type="array<double>",
                                   env_manager="local")
-scored = feats.withColumn("p_lapse", F.round(predict(*[F.col(c) for c in FEATURES]), 4))
+# predict_proba returns [P(stay), P(lapse)]; keep the positive class
+scored = feats.withColumn("proba", predict(*[F.col(c) for c in FEATURES])) \
+              .withColumn("p_lapse", F.round(F.element_at("proba", 2), 4)).drop("proba")
 
 # COMMAND ----------
 
