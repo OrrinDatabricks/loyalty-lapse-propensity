@@ -17,11 +17,11 @@ and lets analysts ask the Genie Agent questions in plain English against governe
 | Stage | What runs | Where |
 |---|---|---|
 | Lakeflow | Serverless Spark Declarative Pipeline: Auto Loader bronze (7 sources) > typed silver with 13 expectations > gold member 360 and member-month activity | `src/pipeline/*.sql`, `resources/loyalty_pipeline.pipeline.yml` |
-| Unity Catalog | Column comments on every gold column, domain / layer / certified tags, PII column tags, email masking for non-admins, three governed metric views, least-privilege grants | `src/governance/apply_governance.py` |
+| Unity Catalog | Column comments on every gold column, `business_area` / layer / certified tags (prefixed `lp_` because the shared metastore enforces tag policies on the common keys), PII column tags, email masking for non-admins, three governed metric views, least-privilege grants | `src/governance/apply_governance.py` |
 | ML | Point-in-time features from two historical snapshots, HistGradientBoosting classifier in MLflow, registered in UC as `loyalty_lapse_model@champion`, temporal hold-out evaluation, batch scoring with plain-language risk drivers and recommended actions | `src/ml/features.py`, `src/ml/train_lapse_model.py`, `src/ml/score_members.py` |
 | Lakebase | Project `loyalty-lapse`; `member_retention_scores` synced from Delta into Postgres (triggered sync); the app writes `retention_app.outreach_actions` back to the same database | `src/lakebase/create_synced_table.sh` |
 | Genie Agent | "Loyalty Retention" agent on the three metric views plus two gold tables, with instructions, example SQL and benchmarks committed as a reproducible payload | `src/genie/build_genie_agent.py`, `src/genie/deploy_genie_agent.sh` |
-| Databricks App | Streamlit retention console: program KPIs from the metric views, Lakebase worklist with approve / suppress / contacted write-back, embedded Genie chat, outreach log | `src/app/`, `resources/pending/retention_app.app.yml` |
+| Databricks App | Streamlit retention console: program KPIs from the metric views, Lakebase worklist with approve / suppress / contacted write-back, embedded Genie chat, outreach log | `src/app/`, `resources/retention_app.app.yml` |
 
 Synthetic source data is produced by `src/generate/generate_synthetic_data.py` (Spark + Faker on serverless) into a
 UC volume as CSV and JSON files, the way a loyalty platform, POS, analytics SDK, campaign tool and returns desk would
@@ -62,11 +62,11 @@ databricks postgres create-project loyalty-lapse --json '{"spec": {"display_name
 databricks postgres create-catalog loyalty_lakebase --json '{"spec": {"postgres_database": "databricks_postgres", "branch": "projects/loyalty-lapse/branches/production"}}' --profile <P>
 src/lakebase/create_synced_table.sh <P>
 
-# 6. Genie Agent, then 7. the app with the Genie space id
+# 6. Genie Agent, then 7. the app with the Genie space id (set it in resources/retention_app.app.yml or pass --var)
 src/genie/deploy_genie_agent.sh <P> <warehouse_id>            # prints GENIE_SPACE_ID
-mv resources/pending/retention_app.app.yml resources/
 databricks bundle deploy -t dev --profile <P> --var genie_space_id=<id>
 databricks bundle run retention_console -t dev --profile <P>
+databricks bundle run lakebase_grant_app_access -t dev --profile <P>   # lets the app's service principal read the synced worklist
 ```
 
 ## Results
