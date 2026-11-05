@@ -1,4 +1,7 @@
 variables:
+  llm_endpoint:
+    description: Foundation model serving endpoint used for outreach drafts
+    default: databricks-claude-sonnet-5-5
   genie_space_id:
     description: Genie Agent (space) id created by src/genie/deploy_genie_agent.sh
     default: "01f1d7ad1e5214009afaa179877af99d"
@@ -19,6 +22,10 @@ resources:
             name: loyalty-retention-genie
             space_id: ${var.genie_space_id}
             permission: CAN_RUN
+        - name: llm-endpoint
+          serving_endpoint:
+            name: ${var.llm_endpoint}
+            permission: CAN_QUERY
         - name: postgres
           postgres:
             branch: projects/${var.lakebase_project}/branches/production

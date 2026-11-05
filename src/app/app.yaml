@@ -14,3 +14,5 @@ env:
     value: retention_app
   - name: LAKEBASE_PROJECT
     value: loyalty-lapse
+  - name: LLM_ENDPOINT
+    valueFrom: llm-endpoint

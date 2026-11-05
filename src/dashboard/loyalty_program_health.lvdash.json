@@ -1,0 +1,282 @@
+{
+  "datasets": [
+    {
+      "name": "ds_members",
+      "displayName": "Members (gold_member_360)",
+      "queryLines": [
+        "SELECT member_id, tier, home_store_format, home_region, preferred_channel, join_date, as_of_date, ",
+        "       last_purchase_date, days_since_last_purchase, spend_12m, transactions_12m, events_30d, events_90d, ",
+        "       fit_returns_90d, touches_180d, responses_180d, lapsed_90d, ",
+        "       CASE WHEN lapsed_90d THEN 1 ELSE 0 END AS lapsed_flag, ",
+        "       CASE WHEN lapsed_90d THEN spend_12m ELSE 0 END AS lapsed_spend_12m ",
+        "FROM gold_member_360"
+      ],
+      "columns": [
+        {"displayName": "Members", "description": "Count of loyalty members", "expression": "COUNT(`member_id`)"},
+        {"displayName": "Lapse Rate", "description": "Share of members with no purchase in the last 90 days", "expression": "AVG(`lapsed_flag`)"},
+        {"displayName": "Lapsed Spend 12M", "description": "Trailing-12-month spend held by lapsed members", "expression": "SUM(`lapsed_spend_12m`)"},
+        {"displayName": "Spend 12M", "description": "Trailing-12-month spend", "expression": "SUM(`spend_12m`)"}
+      ]
+    },
+    {
+      "name": "ds_activity",
+      "displayName": "Monthly activity (gold_member_activity_monthly)",
+      "queryLines": [
+        "SELECT activity_month, ",
+        "       COUNT(CASE WHEN transactions > 0 THEN member_id END) AS active_buyers, ",
+        "       SUM(spend) AS spend, SUM(denim_spend) AS denim_spend, ",
+        "       SUM(fit_returns) / NULLIF(SUM(returns), 0) AS fit_return_share, ",
+        "       SUM(campaign_responses) / NULLIF(SUM(campaign_touches), 0) AS campaign_response_rate ",
+        "FROM gold_member_activity_monthly ",
+        "WHERE activity_month >= '2026-01-01' ",
+        "GROUP BY activity_month ORDER BY activity_month"
+      ]
+    },
+    {
+      "name": "ds_risk",
+      "displayName": "Retention worklist (member_retention_scores)",
+      "queryLines": [
+        "SELECT member_id, tier, home_store_format, home_region, preferred_channel, p_lapse, risk_band, ",
+        "       primary_driver, recommended_action, spend_12m, annual_value_at_risk, days_since_last_purchase, ",
+        "       CASE WHEN risk_band = 'High' THEN 1 ELSE 0 END AS high_flag ",
+        "FROM member_retention_scores"
+      ],
+      "columns": [
+        {"displayName": "Scored Members", "description": "Regular shoppers scored by the model", "expression": "COUNT(`member_id`)"},
+        {"displayName": "High Risk Members", "description": "Members with p_lapse >= 0.60", "expression": "SUM(`high_flag`)"},
+        {"displayName": "Revenue at Risk", "description": "Sum of spend_12m x p_lapse", "expression": "SUM(`annual_value_at_risk`)"},
+        {"displayName": "Avg Lapse Probability", "description": "Mean model probability", "expression": "AVG(`p_lapse`)"}
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Program health",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "header",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Loyalty program health and lapse risk\n",
+                "\n",
+                "Lapsed = no purchase in the last 90 days. Two events shaped 2026: the Core Denim fit change on Jun 1 (fit returns triple) and the birthday reward cut from $20 to $10 on Jul 15 (response rate falls from 34% to 14%). Gold and Silver members at mall stores went quiet first. The model scores regular shoppers weekly; the worklist is served to the Retention Console from Lakebase."
+              ]
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 12, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-members",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_members", "fields": [{"name": "measure(Members)", "expression": "MEASURE(`Members`)"}], "disaggregated": false}}],
+            "spec": {"version": 2, "widgetType": "counter",
+              "encodings": {"value": {"fieldName": "measure(Members)", "displayName": "Members", "format": {"type": "number-plain", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 1}}}},
+              "frame": {"title": "Loyalty members", "showTitle": true}}
+          },
+          "position": {"x": 0, "y": 3, "width": 3, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-lapse-rate",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_members", "fields": [{"name": "measure(Lapse Rate)", "expression": "MEASURE(`Lapse Rate`)"}], "disaggregated": false}}],
+            "spec": {"version": 2, "widgetType": "counter",
+              "encodings": {"value": {"fieldName": "measure(Lapse Rate)", "displayName": "Lapse rate", "format": {"type": "number-percent", "decimalPlaces": {"type": "max", "places": 1}}}},
+              "frame": {"title": "90-day lapse rate", "showTitle": true}}
+          },
+          "position": {"x": 3, "y": 3, "width": 3, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-lapsed-spend",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_members", "fields": [{"name": "measure(Lapsed Spend 12M)", "expression": "MEASURE(`Lapsed Spend 12M`)"}], "disaggregated": false}}],
+            "spec": {"version": 2, "widgetType": "counter",
+              "encodings": {"value": {"fieldName": "measure(Lapsed Spend 12M)", "displayName": "Lapsed spend", "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 1}}}},
+              "frame": {"title": "Trailing-12M spend held by lapsed members", "showTitle": true}}
+          },
+          "position": {"x": 6, "y": 3, "width": 3, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-revenue-at-risk",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_risk", "fields": [{"name": "measure(Revenue at Risk)", "expression": "MEASURE(`Revenue at Risk`)"}], "disaggregated": false}}],
+            "spec": {"version": 2, "widgetType": "counter",
+              "encodings": {"value": {"fieldName": "measure(Revenue at Risk)", "displayName": "Revenue at risk", "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 1}}}},
+              "frame": {"title": "Model revenue at risk (scored regular shoppers)", "showTitle": true}}
+          },
+          "position": {"x": 9, "y": 3, "width": 3, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "lapse-by-tier-format",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_members",
+              "fields": [{"name": "tier", "expression": "`tier`"}, {"name": "home_store_format", "expression": "`home_store_format`"}, {"name": "measure(Lapse Rate)", "expression": "MEASURE(`Lapse Rate`)"}],
+              "disaggregated": false}}],
+            "spec": {"version": 3, "widgetType": "bar", "mark": {"layout": "group"},
+              "encodings": {
+                "x": {"fieldName": "tier", "scale": {"type": "categorical", "sort": {"by": "custom-order", "orderedValues": ["Gold", "Silver", "Bronze"]}}, "displayName": "Tier"},
+                "y": {"fieldName": "measure(Lapse Rate)", "scale": {"type": "quantitative"}, "displayName": "Lapse rate", "format": {"type": "number-percent", "decimalPlaces": {"type": "max", "places": 1}}},
+                "color": {"fieldName": "home_store_format", "scale": {"type": "categorical", "mappings": [{"value": "mall", "color": "#FF7E5C"}]}, "displayName": "Home store format"}
+              },
+              "frame": {"title": "Lapse rate by tier and home store format (mall highlighted)", "showTitle": true}}
+          },
+          "position": {"x": 0, "y": 6, "width": 6, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "monthly-active-buyers",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_activity",
+              "fields": [{"name": "activity_month", "expression": "`activity_month`"}, {"name": "active_buyers", "expression": "`active_buyers`"}],
+              "disaggregated": true}}],
+            "spec": {"version": 3, "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "activity_month", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"fieldName": "active_buyers", "scale": {"type": "quantitative"}, "displayName": "Active buyers"}
+              },
+              "annotations": [
+                {"type": "vertical-line", "encodings": {"x": {"dataValue": "2026-06-01T00:00:00.000", "dataType": "DATETIME"}, "label": {"value": "Denim fit change"}, "color": {"value": {"themeColorType": "visualizationColors", "position": 1}}}},
+                {"type": "vertical-line", "encodings": {"x": {"dataValue": "2026-07-15T00:00:00.000", "dataType": "DATETIME"}, "label": {"value": "Birthday reward cut"}, "color": {"value": {"themeColorType": "visualizationColors", "position": 2}}}}
+              ],
+              "frame": {"title": "Monthly active buyers, 2026", "showTitle": true}}
+          },
+          "position": {"x": 6, "y": 6, "width": 6, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "fit-and-response",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_activity",
+              "fields": [{"name": "activity_month", "expression": "`activity_month`"}, {"name": "fit_return_share", "expression": "`fit_return_share`"}, {"name": "campaign_response_rate", "expression": "`campaign_response_rate`"}],
+              "disaggregated": true}}],
+            "spec": {"version": 3, "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "activity_month", "scale": {"type": "temporal"}, "displayName": "Month"},
+                "y": {"scale": {"type": "quantitative"}, "fields": [
+                  {"fieldName": "fit_return_share", "displayName": "Fit/size share of returns"},
+                  {"fieldName": "campaign_response_rate", "displayName": "Campaign response rate"}
+                ], "format": {"type": "number-percent", "decimalPlaces": {"type": "max", "places": 1}}}
+              },
+              "annotations": [
+                {"type": "vertical-line", "encodings": {"x": {"dataValue": "2026-06-01T00:00:00.000", "dataType": "DATETIME"}, "label": {"value": "Denim fit change"}, "color": {"value": {"themeColorType": "visualizationColors", "position": 1}}}},
+                {"type": "vertical-line", "encodings": {"x": {"dataValue": "2026-07-15T00:00:00.000", "dataType": "DATETIME"}, "label": {"value": "Birthday reward cut"}, "color": {"value": {"themeColorType": "visualizationColors", "position": 2}}}}
+              ],
+              "frame": {"title": "The two causes: fit returns and campaign response, 2026", "showTitle": true}}
+          },
+          "position": {"x": 0, "y": 12, "width": 6, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "risk-by-driver",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_risk",
+              "fields": [{"name": "primary_driver", "expression": "`primary_driver`"}, {"name": "risk_band", "expression": "`risk_band`"}, {"name": "measure(Revenue at Risk)", "expression": "MEASURE(`Revenue at Risk`)"}],
+              "disaggregated": false}}],
+            "spec": {"version": 3, "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "measure(Revenue at Risk)", "scale": {"type": "quantitative"}, "displayName": "Revenue at risk", "format": {"type": "number-currency", "currencyCode": "USD", "abbreviation": "compact", "decimalPlaces": {"type": "max", "places": 1}}},
+                "y": {"fieldName": "primary_driver", "scale": {"type": "categorical", "sort": {"by": "value"}}, "displayName": "Primary driver"},
+                "color": {"fieldName": "risk_band", "scale": {"type": "categorical", "mappings": [{"value": "High", "color": "#FF7E5C"}, {"value": "Medium", "color": "#FFA600"}, {"value": "Low", "color": "#99DDB4"}]}, "displayName": "Risk band"}
+              },
+              "frame": {"title": "Revenue at risk by primary driver and risk band", "showTitle": true}}
+          },
+          "position": {"x": 6, "y": 12, "width": 6, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "worklist",
+            "queries": [{"name": "main_query", "query": {"datasetName": "ds_risk",
+              "fields": [
+                {"name": "member_id", "expression": "`member_id`"}, {"name": "tier", "expression": "`tier`"},
+                {"name": "home_store_format", "expression": "`home_store_format`"}, {"name": "risk_band", "expression": "`risk_band`"},
+                {"name": "p_lapse", "expression": "`p_lapse`"}, {"name": "primary_driver", "expression": "`primary_driver`"},
+                {"name": "recommended_action", "expression": "`recommended_action`"}, {"name": "annual_value_at_risk", "expression": "`annual_value_at_risk`"}
+              ],
+              "disaggregated": true, "orders": [{"direction": "DESC", "expression": "`annual_value_at_risk`"}]}}],
+            "spec": {"version": 2, "widgetType": "table",
+              "encodings": {"columns": [
+                {"fieldName": "member_id", "displayName": "Member"},
+                {"fieldName": "tier", "displayName": "Tier"},
+                {"fieldName": "home_store_format", "displayName": "Home store"},
+                {"fieldName": "risk_band", "displayName": "Risk band"},
+                {"fieldName": "p_lapse", "displayName": "p(lapse)", "format": {"type": "number-plain", "decimalPlaces": {"type": "exact", "places": 2}}},
+                {"fieldName": "primary_driver", "displayName": "Driver"},
+                {"fieldName": "recommended_action", "displayName": "Recommended action"},
+                {"fieldName": "annual_value_at_risk", "displayName": "Value at risk", "format": {"type": "number-currency", "currencyCode": "USD", "decimalPlaces": {"type": "exact", "places": 0}}}
+              ]},
+              "frame": {"title": "Worklist: highest value at risk first (same rows the Retention Console serves from Lakebase)", "showTitle": true}}
+          },
+          "position": {"x": 0, "y": 18, "width": 12, "height": 7}
+        }
+      ]
+    },
+    {
+      "name": "filters",
+      "displayName": "Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter_tier",
+            "queries": [
+              {"name": "ds_members_tier", "query": {"datasetName": "ds_members", "fields": [{"name": "tier", "expression": "`tier`"}], "disaggregated": false}},
+              {"name": "ds_risk_tier", "query": {"datasetName": "ds_risk", "fields": [{"name": "tier", "expression": "`tier`"}], "disaggregated": false}}
+            ],
+            "spec": {"version": 2, "widgetType": "filter-multi-select",
+              "encodings": {"fields": [
+                {"fieldName": "tier", "displayName": "Tier", "queryName": "ds_members_tier"},
+                {"fieldName": "tier", "displayName": "Tier", "queryName": "ds_risk_tier"}
+              ]},
+              "frame": {"showTitle": true, "title": "Tier"}}
+          },
+          "position": {"x": 0, "y": 0, "width": 4, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "filter_format",
+            "queries": [
+              {"name": "ds_members_format", "query": {"datasetName": "ds_members", "fields": [{"name": "home_store_format", "expression": "`home_store_format`"}], "disaggregated": false}},
+              {"name": "ds_risk_format", "query": {"datasetName": "ds_risk", "fields": [{"name": "home_store_format", "expression": "`home_store_format`"}], "disaggregated": false}}
+            ],
+            "spec": {"version": 2, "widgetType": "filter-multi-select",
+              "encodings": {"fields": [
+                {"fieldName": "home_store_format", "displayName": "Home store format", "queryName": "ds_members_format"},
+                {"fieldName": "home_store_format", "displayName": "Home store format", "queryName": "ds_risk_format"}
+              ]},
+              "frame": {"showTitle": true, "title": "Home store format"}}
+          },
+          "position": {"x": 4, "y": 0, "width": 4, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "filter_region",
+            "queries": [
+              {"name": "ds_members_region", "query": {"datasetName": "ds_members", "fields": [{"name": "home_region", "expression": "`home_region`"}], "disaggregated": false}},
+              {"name": "ds_risk_region", "query": {"datasetName": "ds_risk", "fields": [{"name": "home_region", "expression": "`home_region`"}], "disaggregated": false}}
+            ],
+            "spec": {"version": 2, "widgetType": "filter-multi-select",
+              "encodings": {"fields": [
+                {"fieldName": "home_region", "displayName": "Region", "queryName": "ds_members_region"},
+                {"fieldName": "home_region", "displayName": "Region", "queryName": "ds_risk_region"}
+              ]},
+              "frame": {"showTitle": true, "title": "Region"}}
+          },
+          "position": {"x": 8, "y": 0, "width": 4, "height": 2}
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {"light": "#FCFCFC", "dark": "#1F272D"},
+      "widgetBackgroundColor": {"light": "#FFFFFF", "dark": "#11171C"},
+      "widgetBorderColor": {"light": "#FFFFFF", "dark": "#11171C"},
+      "fontColor": {"light": "#1B3139", "dark": "#E8ECF0"},
+      "selectionColor": {"light": "#2272B4", "dark": "#8ACAFF"},
+      "visualizationColors": ["#1B3139", "#FF3621", "#FFA600", "#2272B4", "#00A972", "#7C3AED", "#99DDB4"],
+      "widgetHeaderAlignment": "LEFT"
+    },
+    "genieSpace": {"isEnabled": true, "overrideId": "01f1d7ad1e5214009afaa179877af99d", "enablementMode": "ENABLED"}
+  }
+}

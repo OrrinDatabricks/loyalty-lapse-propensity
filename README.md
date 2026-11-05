@@ -14,14 +14,30 @@ and lets analysts ask the Genie Agent questions in plain English against governe
 
 ## Data journey
 
+```mermaid
+flowchart LR
+    src["Raw extracts<br/>members, transactions, engagement,<br/>campaign touches, returns"] --> lf["Lakeflow SDP<br/>bronze > silver (13 expectations) > gold"]
+    lf --> uc["Unity Catalog<br/>comments, tags, PII masking,<br/>3 metric views, grants"]
+    lf --> ml["MLflow<br/>train on 2 snapshots,<br/>score weekly, drivers + actions"]
+    ml --> lb["Lakebase<br/>synced worklist +<br/>outreach_actions write-back"]
+    ml --> uc
+    uc --> genie["Genie Agent<br/>Loyalty Retention"]
+    uc --> dash["AI/BI dashboard<br/>program health"]
+    lb --> app["Retention Console<br/>Databricks App"]
+    genie --> app
+    fm["Foundation model<br/>outreach drafts"] --> app
+    app -. decisions .-> lb
+```
+
 | Stage | What runs | Where |
 |---|---|---|
 | Lakeflow | Serverless Spark Declarative Pipeline: Auto Loader bronze (7 sources) > typed silver with 13 expectations > gold member 360 and member-month activity | `src/pipeline/*.sql`, `resources/loyalty_pipeline.pipeline.yml` |
 | Unity Catalog | Column comments on every gold column, `business_area` / layer / certified tags (prefixed `lp_` because the shared metastore enforces tag policies on the common keys), PII column tags, email masking for non-admins, three governed metric views, least-privilege grants | `src/governance/apply_governance.py` |
-| ML | Point-in-time features from two historical snapshots, HistGradientBoosting classifier in MLflow, registered in UC as `loyalty_lapse_model@champion`, temporal hold-out evaluation, batch scoring with plain-language risk drivers and recommended actions | `src/ml/features.py`, `src/ml/train_lapse_model.py`, `src/ml/score_members.py` |
-| Lakebase | Project `loyalty-lapse`; `member_retention_scores` synced from Delta into Postgres (triggered sync); the app writes `retention_app.outreach_actions` back to the same database | `src/lakebase/create_synced_table.sh` |
-| Genie Agent | "Loyalty Retention" agent on the three metric views plus two gold tables, with instructions, example SQL and benchmarks committed as a reproducible payload | `src/genie/build_genie_agent.py`, `src/genie/deploy_genie_agent.sh` |
-| Databricks App | Streamlit retention console: program KPIs from the metric views, Lakebase worklist with approve / suppress / contacted write-back, embedded Genie chat, outreach log | `src/app/`, `resources/retention_app.app.yml` |
+| ML | Point-in-time features from two historical snapshots, HistGradientBoosting classifier in MLflow, registered in UC as `loyalty_lapse_model@champion`, temporal hold-out evaluation with calibration check, batch scoring with plain-language risk drivers and recommended actions. Runs weekly (Monday 06:00 Central) and refreshes the Lakebase worklist as its last task | `src/ml/features.py`, `src/ml/train_lapse_model.py`, `src/ml/score_members.py`, `resources/train_score.job.yml`, `MODEL.md` |
+| Lakebase | Project `loyalty-lapse`; `member_retention_scores` synced from Delta into Postgres (triggered sync, refreshed by the scoring job); the app writes `retention_app.outreach_actions` back to the same database | `src/lakebase/create_synced_table.sh`, `src/lakebase/grant_app_access.py` |
+| Genie Agent | "Loyalty Retention" agent on the three metric views plus two gold tables, with instructions, example SQL and benchmarks committed as a reproducible payload; benchmark evaluation run scores 4 of 4 | `src/genie/build_genie_agent.py`, `src/genie/deploy_genie_agent.sh` |
+| AI/BI dashboard | "Loyalty program health and lapse risk": KPIs, lapse by tier and store format, monthly trends with the two event annotations, revenue at risk by driver, worklist table, global filters, Genie linked | `src/dashboard/loyalty_program_health.lvdash.json`, `src/dashboard/deploy_dashboard.sh` |
+| Databricks App | Streamlit retention console: program KPIs from the metric views, Lakebase worklist with approve / suppress / contacted write-back, AI-drafted outreach messages from a foundation model endpoint (grounded in the member's driver and action, never mentions scores), embedded Genie chat, outreach log | `src/app/`, `resources/retention_app.app.yml` |
 
 Synthetic source data is produced by `src/generate/generate_synthetic_data.py` (Spark + Faker on serverless) into a
 UC volume as CSV and JSON files, the way a loyalty platform, POS, analytics SDK, campaign tool and returns desk would
@@ -42,7 +58,8 @@ deliver them.
 | `evidence/05b_lakebase_grants.md` | Executed notebook: GRANTs to the app service principal over the Postgres wire protocol, tables visible in Postgres, write-back table contents |
 | `evidence/05_lakebase_sync.log`, `evidence/05b_lakebase_grants_run.log` | CLI output for synced table creation and the grants job run |
 | `evidence/06_genie_agent.md` | Genie Agent creation output and Conversation API answers to the benchmark questions |
-| `evidence/07_app.md` | App deployment status and logs |
+| `evidence/07_app.md` | App deployment status, injected Lakebase variables, user activity from the log |
+| `evidence/08_dashboard.md` | AI/BI dashboard creation and publish state |
 
 ## Reproduce
 
@@ -67,6 +84,9 @@ src/genie/deploy_genie_agent.sh <P> <warehouse_id>            # prints GENIE_SPA
 databricks bundle deploy -t dev --profile <P> --var genie_space_id=<id>
 databricks bundle run retention_console -t dev --profile <P>
 databricks bundle run lakebase_grant_app_access -t dev --profile <P>   # lets the app's service principal read the synced worklist
+
+# 8. AI/BI dashboard
+src/dashboard/deploy_dashboard.sh <P> <warehouse_id>
 ```
 
 ## Results

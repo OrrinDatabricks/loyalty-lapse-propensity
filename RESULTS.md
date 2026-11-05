@@ -26,8 +26,12 @@ All numbers come from committed run outputs. Synthetic data; dollar figures are 
 | Total model revenue at risk (all scored) | $14.4M | member_retention_scores query |
 | High risk Gold/Silver mall members / revenue at risk | 1,260 / $1.07M | member_retention_scores query |
 | Share of High risk that is Gold or Silver at mall stores | 89% (1,260 of 1,408) | `evidence/03b_score_members.md` |
-| Lakebase synced table | `loyalty_lakebase.loyalty.member_retention_scores`, ONLINE, 101,089 rows | `evidence/05_lakebase.md` |
-| Genie Agent benchmark answers | 6 of 6 questions COMPLETED with correct metric view SQL | `evidence/06_genie_agent.md` |
+| Expected calibration error (hold-out) | 0.0225; members scored 0.6+ lapsed at 89% or more | `evidence/03a_train_lapse_model.md`, `MODEL.md` |
+| Lakebase synced table | `loyalty_lakebase.loyalty.member_retention_scores`, ONLINE, 101,089 rows, refreshed automatically by the scoring job | `evidence/05_lakebase.md` |
+| Decisions written back from the console | 2 approve decisions in `retention_app.outreach_actions` | `evidence/05_lakebase.md` |
+| Genie Agent conversation answers | 6 of 6 questions COMPLETED with correct metric view SQL | `evidence/06_genie_agent.md` |
+| Genie Agent benchmark evaluation run | 4 of 4 correct | `evidence/06_genie_agent.md` |
+| AI/BI dashboard | published, 3 datasets, 4 KPIs, 4 charts, worklist, global filters | `evidence/08_dashboard.md` |
 
 Definitions: *lapsed* = no purchase in the trailing 90 days. *Revenue at risk* = trailing-12-month spend x model
 probability of lapse, summed. *Regular shopper* = 3 or more purchases in the trailing 180 days.

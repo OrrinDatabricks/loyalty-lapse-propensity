@@ -30,9 +30,9 @@ print("Scoring as of", AS_OF)
 Output:
 
 ```text
-{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
-{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
-{"ts": "2026-11-03 17:33:33.683", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzU3NTMxNzU1Njc4MTg4NBABIAEyJDAxYTFhMjc4LTFiMWMtN2UxNy1iZjY5LWMxYjVjYzRhMDgxYjokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIprWo1wYQgIaUxgJQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
+{"ts": "2026-11-05 23:54:06.144", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzY5MzcyNjc0ODQ0NjYzORABIAEyJDAxYTFhZTIwLWY0Y2QtNzFmMC1hZTJhLTY4N2FkM2Q2NTM4NzokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIxa201wYQwLaOjwNQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
+{"ts": "2026-11-05 23:54:06.144", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzY5MzcyNjc0ODQ0NjYzORABIAEyJDAxYTFhZTIwLWY0Y2QtNzFmMC1hZTJhLTY4N2FkM2Q2NTM4NzokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIxa201wYQwLaOjwNQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
+{"ts": "2026-11-05 23:54:06.144", "level": "WARNING", "logger": "pyspark.sql.connect.logging", "msg": "Effective usage policy for this session is cct.Cilqb2JzLzU2NzkxMjY1NjY0MTQ1OC9ydW5zLzY5MzcyNjc0ODQ0NjYzORABIAEyJDAxYTFhZTIwLWY0Y2QtNzFmMC1hZTJhLTY4N2FkM2Q2NTM4NzokYjA0MTRmYTctYmNjZS0zM2U5LWI2YjctMWQ0OWQ0NTJiZGJjSgwIxa201wYQwLaOjwNQAlgBYAFok4mfh/bEow2IAQA=.", "context": {}}
 
 Scoring as of 2026-10-30
 ```
@@ -59,8 +59,8 @@ scored = feats.withColumn("proba", predict(*[F.col(c) for c in FEATURES])) \
 Output:
 
 ```text
-2026/11/03 17:33:51 WARNING mlflow.pyfunc: Calling `spark_udf()` with `env_manager="local"` does not recreate the same environment that was used during training, which may lead to errors or inaccurate predictions. We recommend specifying `env_manager="conda"`, which automatically recreates the environment that was used to train the model and performs inference in the recreated environment.
-2026/11/03 17:33:51 INFO mlflow.models.flavor_backend_registry: Selected backend for flavor 'python_function'
+2026/11/05 23:54:15 WARNING mlflow.pyfunc: Calling `spark_udf()` with `env_manager="local"` does not recreate the same environment that was used during training, which may lead to errors or inaccurate predictions. We recommend specifying `env_manager="conda"`, which automatically recreates the environment that was used to train the model and performs inference in the recreated environment.
+2026/11/05 23:54:15 INFO mlflow.models.flavor_backend_registry: Selected backend for flavor 'python_function'
 ```
 
 ## Risk drivers and recommended action

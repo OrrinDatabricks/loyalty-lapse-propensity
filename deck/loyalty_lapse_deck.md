@@ -42,7 +42,15 @@ An integrated data journey, not another dashboard. Each stage feeds the next and
 3. **MLflow model** predicts the chance a regular shopper buys nothing in the next 90 days, with plain-language drivers and a recommended action per member.
 4. **Lakebase** serves the ranked worklist to the console from Postgres and stores every approve, suppress or contacted decision.
 5. **Genie Agent** answers the CRM team's questions in English against the governed metrics, showing its SQL.
-6. **Retention Console** (Databricks App) is where the team works the list.
+6. **Retention Console** (Databricks App) is where the team works the list, with a foundation model drafting the outreach message from the member's driver and recommended action.
+
+---
+
+## How it fits together
+
+<img src="architecture_tb.png" alt="Architecture: raw extracts into Lakeflow bronze/silver/gold, governed in Unity Catalog, scored by MLflow, served from Lakebase and Genie into the Retention Console" style="width:72%; max-width:72%; height:auto; display:block; margin:0 auto;" />
+
+Every arrow is a real dependency in the bundle: the pipeline feeds the metric views and the model, the model feeds Lakebase and the metric views, and the console reads from Lakebase, Genie and the foundation model while writing decisions back to Lakebase.
 
 ---
 
@@ -61,6 +69,8 @@ Trained on two historical snapshots (features as of Apr 30 and Jun 30), judged o
 
 Top drivers: days since last engagement, 12-month purchase count, tier, home store format, lifetime purchases, denim share.
 
+The probabilities are honest, not just well ordered: expected calibration error is 2.3 points, and members scored above 0.6 lapsed at 89% or more in the hold-out, so the High band is conservative.
+
 ---
 
 ## What the retention team sees
@@ -71,6 +81,8 @@ The console turns a score into a decision.
 - **Recommended actions** are specific: fit-guarantee exchange for members with fit returns, restored $20 birthday reward for the devalued, app push for the disengaging, channel switch for the unresponsive.
 - **Write-back**: approve, suppress or mark contacted. Every decision lands in Lakebase with who, when and why, and feeds next week's list.
 - **Ask Genie**: "Which Gold members in mall stores are at high risk and what should we do?" answered from governed metrics, SQL shown.
+- **Draft outreach with AI**: one click produces the push, SMS, email or associate talking points for that member, grounded in the driver and the recommended action. It never mentions scores or risk; the team edits and sends.
+- **Program health dashboard** for leadership: the same KPIs, lapse by tier and store format, the 2026 trend with both events marked, revenue at risk by driver, with Genie one click away.
 
 ---
 

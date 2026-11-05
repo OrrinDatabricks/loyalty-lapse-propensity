@@ -1,0 +1,54 @@
+flowchart LR
+    classDef src fill:#F3F4F6,stroke:#9CA3AF,color:#111827
+    classDef lf fill:#FFE8E3,stroke:#FF3621,color:#111827
+    classDef uc fill:#E6F1FB,stroke:#2272B4,color:#111827
+    classDef ml fill:#EAF7EF,stroke:#00A972,color:#111827
+    classDef lb fill:#FFF4DB,stroke:#D97706,color:#111827
+    classDef gen fill:#F1E9FB,stroke:#7C3AED,color:#111827
+    classDef app fill:#1B3139,stroke:#1B3139,color:#FFFFFF
+
+    subgraph SRC["Raw extracts (synthetic)"]
+        direction TB
+        s1["Loyalty platform<br/>members CSV"]:::src
+        s2["POS / e-commerce<br/>transactions JSON"]:::src
+        s3["Analytics SDK<br/>engagement JSON"]:::src
+        s4["Campaign tool<br/>touches CSV"]:::src
+        s5["Returns desk<br/>returns CSV"]:::src
+    end
+
+    subgraph LF["Lakeflow (serverless SDP)"]
+        direction TB
+        b["Bronze<br/>Auto Loader, 7 streaming tables"]:::lf
+        sv["Silver<br/>typed, 13 expectations"]:::lf
+        g["Gold<br/>member_360, activity_monthly"]:::lf
+        b --> sv --> g
+    end
+
+    subgraph UC["Unity Catalog"]
+        direction TB
+        mv["Metric views<br/>lapse rate, revenue at risk,<br/>campaign response"]:::uc
+        gov["Comments, tags, PII masking,<br/>grants, model registry"]:::uc
+    end
+
+    subgraph ML["ML (MLflow)"]
+        direction TB
+        tr["Train on 2 snapshots<br/>HistGradientBoosting"]:::ml
+        sc["Score weekly<br/>p(lapse), drivers, action"]:::ml
+        tr --> sc
+    end
+
+    lb["Lakebase (Postgres)<br/>synced worklist +<br/>outreach_actions write-back"]:::lb
+    genie["Genie Agent<br/>Loyalty Retention"]:::gen
+    app["Retention Console<br/>Databricks App"]:::app
+    fm["Foundation model<br/>outreach drafts"]:::gen
+
+    s1 & s2 & s3 & s4 & s5 --> b
+    g --> mv
+    g --> tr
+    mv --> genie
+    sc --> lb
+    sc --> mv
+    lb --> app
+    genie --> app
+    fm --> app
+    app -. decisions .-> lb

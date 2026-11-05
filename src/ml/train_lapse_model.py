@@ -126,6 +126,29 @@ print(f"\nTop decile holds ${summary.loc[0, 'lapsed_spend_12m']:,.0f} of trailin
 
 # COMMAND ----------
 
+# MAGIC %md ## Calibration: does a 0.6 score mean 60% of those members lapse?
+# MAGIC The console shows p_lapse to the retention team and the risk bands are thresholds on it, so the probabilities need to be honest, not just well ordered.
+
+# COMMAND ----------
+
+bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0]
+test_pd["score_bin"] = pd.cut(test_pd["p_lapse"], bins=bins, include_lowest=True)
+calib = (test_pd.groupby("score_bin", observed=True)
+         .agg(members=("lapsed", "size"), mean_score=("p_lapse", "mean"), actual_lapse_rate=("lapsed", "mean"))
+         .reset_index())
+calib["score_bin"] = calib["score_bin"].astype(str)
+calib["mean_score"] = calib["mean_score"].round(3)
+calib["actual_lapse_rate"] = calib["actual_lapse_rate"].round(3)
+calib["abs_gap"] = (calib["mean_score"] - calib["actual_lapse_rate"]).abs().round(3)
+print(calib.to_string(index=False))
+ece = float((calib["abs_gap"] * calib["members"]).sum() / calib["members"].sum())
+print(f"\nExpected calibration error (weighted mean |score - actual|): {ece:.4f}")
+with mlflow.start_run(run_id=run_id):
+    mlflow.log_metric("holdout_expected_calibration_error", ece)
+    mlflow.log_table(calib, "calibration.json")
+
+# COMMAND ----------
+
 # MAGIC %md ## Promote to champion
 
 # COMMAND ----------

@@ -153,3 +153,55 @@ The app's service principal created schema `retention_app` and table `outreach_a
     "table_schema": "retention_app"
   }
 ]
+
+echo
+
+echo "## Automatic refresh after the weekly scoring run"
+
+echo
+
+echo "The scoring job's last task (\`refresh_lakebase_worklist\`, a pipeline_task with full_refresh) re-syncs the worklist after each scoring run. Task states from the latest run:"
+
+echo
+
+echo '```text'
+
+cat /tmp/tasks2.txt
+
+awk '{print $1, $3}'
+
+echo '```'
+
+echo
+
+echo '```json'
+
+databricks postgres get-synced-table "synced_tables/loyalty_lakebase.loyalty.member_retention_scores" --profile $P -o json
+
+python3 -c "import sys,json; d=json.load(sys.stdin)['status']; print(json.dumps({'detailed_state': d.get('detailed_state'), 'last_sync': d.get('last_sync')}, indent=2))"
+
+echo '```'
+
+## Automatic refresh after the weekly scoring run
+
+The scoring job's last task (`refresh_lakebase_worklist`, a pipeline_task with full_refresh) re-syncs the worklist after each scoring run. Task states from the latest run:
+
+```text
+score SUCCESS
+refresh_lakebase_worklist SUCCESS
+train SUCCESS
+```
+
+```json
+{
+  "detailed_state": "SYNCED_TABLE_ONLINE_NO_PENDING_UPDATE",
+  "last_sync": {
+    "delta_table_sync_info": {
+      "delta_commit_time": "2026-11-05T23:54:47Z",
+      "delta_commit_version": 78
+    },
+    "sync_end_time": "2026-11-05T23:55:21.923044Z",
+    "sync_start_time": "2026-11-05T23:55:09.460717Z"
+  }
+}
+```

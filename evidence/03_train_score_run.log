@@ -1,7 +1,12 @@
-Run URL: https://fevm-loyalty-lapse-demo.cloud.databricks.com/jobs/567912656641458/runs/575317556781884?o=7474649175147667
+Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
+Updated jobs.train_and_score
+Updated apps.retention_console
+Files: 14 uploaded, 1 deleted
+Resources: 0 created, 2 changed, 0 deleted, 4 unchanged
+Run URL: https://fevm-loyalty-lapse-demo.cloud.databricks.com/jobs/567912656641458/runs/693726748446639?o=7474649175147667
 
-2026-11-03 09:32:22 "[loyalty] 03 train and score lapse model" RUNNING
-2026-11-03 09:34:36 "[loyalty] 03 train and score lapse model" TERMINATED SUCCESS
+2026-11-05 15:52:36 "[loyalty] 03 train and score lapse model" RUNNING
+2026-11-05 15:55:43 "[loyalty] 03 train and score lapse model" TERMINATED SUCCESS
 Output:
 =======
 Task train:
@@ -9,4 +14,4 @@ Task train:
 =======
 Task score:
 
-chain_exit=0
+exit=0

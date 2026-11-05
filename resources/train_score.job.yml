@@ -1,8 +1,17 @@
+variables:
+  sync_pipeline_id:
+    description: Pipeline id behind the Lakebase synced table loyalty_lakebase.loyalty.member_retention_scores (from `databricks postgres get-synced-table`)
+    default: 7d553664-4ccc-447c-b689-6e1530dbd897
+
 resources:
   jobs:
     train_and_score:
       name: "[loyalty] 03 train and score lapse model"
-      description: Trains the lapse propensity model on historical snapshots, registers it in UC, then scores active members into member_retention_scores.
+      description: Weekly. Trains the lapse propensity model on historical snapshots, registers it in UC, scores regular shoppers into member_retention_scores, then refreshes the Lakebase worklist.
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON"
+        timezone_id: America/Chicago
+        pause_status: UNPAUSED
       tasks:
         - task_key: train
           notebook_task:
@@ -20,6 +29,13 @@ resources:
               catalog: ${var.catalog}
               schema: ${var.schema}
           environment_key: default
+        - task_key: refresh_lakebase_worklist
+          description: Scoring overwrites the Delta table, so the synced table needs a full refresh to pick up the new worklist.
+          depends_on:
+            - task_key: score
+          pipeline_task:
+            pipeline_id: ${var.sync_pipeline_id}
+            full_refresh: true
       environments:
         - environment_key: default
           spec:

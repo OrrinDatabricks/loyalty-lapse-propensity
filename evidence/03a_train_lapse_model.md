@@ -135,9 +135,9 @@ Output:
 
 ```text
 Registered model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model' already exists. Creating a new version of this model...
-Created version '3' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
+Created version '4' of model 'loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model'.
 
-Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 3
+Registered: loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model version 4
 Hold-out metrics (features as of 2026-07-31 , label window = next 90 days):
   holdout_auc              0.7164
   holdout_avg_precision    0.5191
@@ -171,8 +171,6 @@ print(f"\nTop decile holds ${summary.loc[0, 'lapsed_spend_12m']:,.0f} of trailin
 Output:
 
 ```text
-INFO:py4j.clientserver:Received command c on object id p0
-
 decile  members  actual_lapse_rate  avg_score  spend_12m_total  lapsed_spend_12m
      1     9479              0.594      0.535        3366970.0         2398742.0
      2     9479              0.492      0.467        2758929.0         1456760.0
@@ -188,9 +186,49 @@ decile  members  actual_lapse_rate  avg_score  spend_12m_total  lapsed_spend_12m
 Top decile holds $2,398,742 of trailing-12-month spend from members who actually lapsed (15.6% of all lapsed spend) in 10% of the outreach volume.
 ```
 
-## Promote to champion
+## Calibration: does a 0.6 score mean 60% of those members lapse?
+The console shows p_lapse to the retention team and the risk bands are thresholds on it, so the probabilities need to be honest, not just well ordered.
 
 ## Cell 8 (finished)
+
+```python
+bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0]
+test_pd["score_bin"] = pd.cut(test_pd["p_lapse"], bins=bins, include_lowest=True)
+calib = (test_pd.groupby("score_bin", observed=True)
+         .agg(members=("lapsed", "size"), mean_score=("p_lapse", "mean"), actual_lapse_rate=("lapsed", "mean"))
+         .reset_index())
+calib["score_bin"] = calib["score_bin"].astype(str)
+calib["mean_score"] = calib["mean_score"].round(3)
+calib["actual_lapse_rate"] = calib["actual_lapse_rate"].round(3)
+calib["abs_gap"] = (calib["mean_score"] - calib["actual_lapse_rate"]).abs().round(3)
+print(calib.to_string(index=False))
+ece = float((calib["abs_gap"] * calib["members"]).sum() / calib["members"].sum())
+print(f"\nExpected calibration error (weighted mean |score - actual|): {ece:.4f}")
+with mlflow.start_run(run_id=run_id):
+    mlflow.log_metric("holdout_expected_calibration_error", ece)
+    mlflow.log_table(calib, "calibration.json")
+```
+
+Output:
+
+```text
+    score_bin  members  mean_score  actual_lapse_rate  abs_gap
+(-0.001, 0.1]    11413       0.058              0.065    0.007
+   (0.1, 0.2]    17223       0.154              0.169    0.015
+   (0.2, 0.3]    22946       0.247              0.258    0.011
+   (0.3, 0.4]    17328       0.345              0.373    0.028
+   (0.4, 0.5]    17218       0.450              0.480    0.030
+   (0.5, 0.6]     8074       0.528              0.578    0.050
+   (0.6, 0.7]      392       0.636              0.885    0.249
+   (0.7, 0.8]      142       0.748              0.965    0.217
+   (0.8, 1.0]       52       0.840              1.000    0.160
+
+Expected calibration error (weighted mean |score - actual|): 0.0225
+```
+
+## Promote to champion
+
+## Cell 10 (finished)
 
 ```python
 from mlflow import MlflowClient
@@ -212,7 +250,7 @@ print(imp_df.head(12).to_string(index=False))
 Output:
 
 ```text
-loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v3 -> alias 'champion'
+loyalty_lapse_demo_catalog.loyalty.loyalty_lapse_model v4 -> alias 'champion'
                    feature  importance
 days_since_last_engagement    0.047886
           transactions_12m    0.031421

@@ -178,3 +178,19 @@ M0287728 | Gold | 0.7716 | purchase_recency | Switch channel; one high-value off
 M0229399 | Gold | 0.8359 | engagement_drop | Fit-guarantee outreach: free exchange + stylist fit consult | 2996.2
 ```
 
+## Benchmark evaluation run (Genie eval API)
+
+Run `01f1d97382681faab7c9b400f5dd0af0` over the 4 committed benchmark questions (`benchmarks.questions` in `src/genie/genie_agent.json`), started with `databricks genie genie-create-eval-run` and read back with `genie-get-eval-run`.
+
+```json
+{
+  "eval_run_id": "01f1d97382681faab7c9b400f5dd0af0",
+  "eval_run_status": "DONE",
+  "num_questions": 4,
+  "num_done": 4,
+  "num_correct": 4,
+  "num_needs_review": 0
+}
+```
+
+Result: 4 of 4 benchmark questions answered correctly against their canonical metric-view SQL.

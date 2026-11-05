@@ -106,6 +106,31 @@ def wh_df(query):
         return pd.DataFrame(cur.fetchall(), columns=[d[0] for d in cur.description])
 
 
+LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "databricks-claude-sonnet-5-5")
+
+
+def draft_outreach(row, channel):
+    """Ask a Foundation Model endpoint for a short, on-brand outreach draft grounded in the member's drivers."""
+    client = w.serving_endpoints.get_open_ai_client()
+    brief = {
+        "tier": row["tier"], "home_store_format": row["home_store_format"], "home_region": row["home_region"],
+        "channel": channel, "days_since_last_purchase": int(row["days_since_last_purchase"]),
+        "primary_driver": row["primary_driver"], "recommended_action": row["recommended_action"],
+        "lapse_probability": float(row["p_lapse"]), "trailing_12m_spend_usd": float(row["spend_12m"]),
+    }
+    system = ("You write retention outreach for a specialty apparel loyalty program. Produce one message for the given "
+              "channel: app push under 140 characters, sms under 160 characters, email with a subject line and 3 short "
+              "paragraphs, store associate as 3 talking points. Ground the message in the recommended action and the driver. "
+              "Never mention probabilities, scores, data, or that the member is at risk. Warm, specific, no exclamation marks, "
+              "no em dashes. Use {first_name} as a placeholder.")
+    resp = client.chat.completions.create(
+        model=LLM_ENDPOINT, max_tokens=400, temperature=0.4,
+        messages=[{"role": "system", "content": system},
+                  {"role": "user", "content": f"Member brief as JSON:\n{brief}\n\nWrite the {channel} message."}],
+    )
+    return resp.choices[0].message.content.strip()
+
+
 def current_user():
     try:
         return st.context.headers.get("X-Forwarded-Email") or w.current_user.me().user_name
@@ -198,6 +223,17 @@ with tab_work:
             channel = d1.selectbox("Channel", ["app", "email", "sms", "store associate"], index=["app", "email", "sms", "none"].index(row["preferred_channel"]) if row["preferred_channel"] in ["app", "email", "sms"] else 3)
             note = d2.text_input("Note", placeholder="Why / what was sent")
             decision = d3.radio("Decision", ["approve", "suppress", "contacted"], horizontal=True)
+
+            draft_key = f"draft_{sel}_{channel}"
+            if st.button("Draft outreach with AI", help=f"Foundation model endpoint {LLM_ENDPOINT}; grounded in the driver and recommended action, never mentions scores"):
+                with st.spinner("Drafting..."):
+                    try:
+                        st.session_state[draft_key] = draft_outreach(row, channel)
+                    except Exception as e:
+                        st.error(f"Draft failed: {e}")
+            if draft_key in st.session_state:
+                st.text_area("Draft (edit before sending)", st.session_state[draft_key], height=180, key=f"ta_{draft_key}")
+
             if st.button("Record decision", type="primary"):
                 pg_exec(f"""INSERT INTO {APP_SCHEMA}.outreach_actions
                             (member_id, decision, action, channel, note, p_lapse, value_at_risk, decided_by)
