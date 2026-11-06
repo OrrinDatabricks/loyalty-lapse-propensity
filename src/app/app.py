@@ -161,10 +161,9 @@ st.markdown("""
   [data-testid="stMetricValue"] {font-size: 1.65rem; font-weight: 600; color: #1B3139;}
   .stTabs [data-baseweb="tab"] {font-size: 0.98rem; padding: 10px 18px;}
   .stTabs [aria-selected="true"] {border-bottom: 3px solid #FF3621;}
-  .lp-hero {background: linear-gradient(90deg, #1B3139 0%, #2B4A56 100%); color: white; border-radius: 14px; padding: 22px 28px; margin-bottom: 14px;}
-  .lp-hero h1 {color: white; font-size: 1.7rem; margin: 0 0 4px 0;}
-  .lp-hero p {color: #CFDDE3; margin: 0; font-size: 0.95rem;}
-  .lp-chip {display: inline-block; background: rgba(255,255,255,0.12); color: #E8EEF1; border-radius: 999px; padding: 3px 11px; font-size: 0.75rem; margin: 10px 6px 0 0; border: 1px solid rgba(255,255,255,0.18);}
+  .lp-hero {background: linear-gradient(90deg, #1B3139 0%, #2B4A56 100%); color: white; border-radius: 10px; padding: 12px 20px; margin-bottom: 10px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;}
+  .lp-hero h1 {color: white; font-size: 1.25rem; margin: 0; font-weight: 600;}
+  .lp-hero p {color: #CFDDE3; margin: 0; font-size: 0.88rem;}
   .lp-pill {display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; color: white; margin-right: 6px; vertical-align: middle;}
   .lp-action {background: #F4F6F8; border-left: 4px solid #FF3621; border-radius: 8px; padding: 12px 16px; margin: 6px 0 12px 0;}
   .lp-action b {color: #1B3139;}
@@ -196,8 +195,7 @@ def event_rules():
 st.markdown("""
 <div class="lp-hero">
   <h1>Loyalty Retention Console</h1>
-  <p>Find the members who are about to go quiet, decide what to do, and write the decision back. One governed source of truth behind every number.</p>
-  <span class="lp-chip">Lakeflow</span><span class="lp-chip">Unity Catalog metric views</span><span class="lp-chip">MLflow lapse model</span><span class="lp-chip">Lakebase worklist</span><span class="lp-chip">Genie Agent</span><span class="lp-chip">Foundation model drafts</span>
+  <p>Find the members about to go quiet, decide what to do, write the decision back.</p>
 </div>
 """, unsafe_allow_html=True)
 

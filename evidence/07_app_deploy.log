@@ -1,12 +1,12 @@
 Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
-Files: 4 uploaded, 0 deleted
+Files: 2 uploaded, 0 deleted
 Resources: 0 created, 0 changed, 0 deleted, 6 unchanged
 ✓ Getting the status of the app loyalty-retention-console
 ✓ App is in RUNNING state
 ✓ App compute is in ACTIVE state
 ✓ Preparing source code for new app deployment.
-✓ Deployment is pending
-✓ Installing packages...
+✓ Preparing source code for new app deployment.
+✓ Downloading source code from /Workspace/Users/29d247c7-e20d-45b6-a2b1-242c0b67abd6/src/01f1d97973b71eaf9c2c05114e8f3a2d
 ✓ App started successfully
 You can access the app at https://loyalty-retention-console-7474649175147667.aws.databricksapps.com
 exit=0
