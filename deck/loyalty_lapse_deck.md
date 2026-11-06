@@ -1,3 +1,5 @@
+> Narrative outline for the Google Slides deck (built by `build_gslides.py`, exported as `loyalty_lapse_deck.pdf`). Section breaks below correspond to slides.
+
 # Stop the quiet lapse
 
 **Predicting which loyalty members go silent next, and acting 60 days earlier**

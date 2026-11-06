@@ -89,6 +89,12 @@ databricks bundle run lakebase_grant_app_access -t dev --profile <P>   # lets th
 src/dashboard/deploy_dashboard.sh <P> <warehouse_id>
 ```
 
+## Deck
+
+The business deck is a 12-slide Google Slides presentation on the Databricks template, built by `deck/build_gslides.py`
+(Slides API; tables, a native architecture diagram, template layouts). `deck/loyalty_lapse_deck.pdf` is the PDF export
+of that deck. `deck/loyalty_lapse_deck.md` is the narrative outline the slides follow.
+
 ## Results
 
 See `RESULTS.md` for the numbers quoted in the deck, each with the evidence file it comes from.
