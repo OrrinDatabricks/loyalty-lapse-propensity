@@ -7,3 +7,4 @@ __pycache__/
 *.pdf
 !deck/*.pdf
 deck/_render.md
+ROLEPLAY_PREP.md
