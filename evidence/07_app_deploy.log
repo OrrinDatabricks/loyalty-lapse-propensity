@@ -5,8 +5,8 @@ Resources: 0 created, 0 changed, 0 deleted, 6 unchanged
 ✓ App is in RUNNING state
 ✓ App compute is in ACTIVE state
 ✓ Preparing source code for new app deployment.
-✓ Preparing source code for new app deployment.
-✓ App built successfully
+✓ Shutting down app...
+✓ Starting app with command: streamlit run app.py
 ✓ App started successfully
 You can access the app at https://loyalty-retention-console-7474649175147667.aws.databricksapps.com
 exit=0

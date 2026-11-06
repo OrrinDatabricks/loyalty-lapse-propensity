@@ -122,7 +122,7 @@ def draft_outreach(row, channel):
               "channel: app push under 140 characters, sms under 160 characters, email with a subject line and 3 short "
               "paragraphs, store associate as 3 talking points. Ground the message in the recommended action and the driver. "
               "Never mention probabilities, scores, data, or that the member is at risk. Warm, specific, no exclamation marks, "
-              "no em dashes. Use {first_name} as a placeholder.")
+              "no em dashes, plain text only (no markdown, no asterisks). Use {first_name} as a placeholder.")
     resp = client.chat.completions.create(
         model=LLM_ENDPOINT, max_tokens=400,  # Claude 5.x endpoints reject the temperature parameter
         messages=[{"role": "system", "content": system},
@@ -225,7 +225,7 @@ with tab_work:
             sel = st.selectbox("Member", ids, format_func=lambda m: f"{m}  (p={float(work.set_index('member_id').loc[m, 'p_lapse']):.2f}, {work.set_index('member_id').loc[m, 'primary_driver']})")
             row = work.set_index("member_id").loc[sel]
             st.info(f"**Recommended:** {row['recommended_action']}  \n**Drivers:** {row['primary_driver']}  "
-                    f"\n**Value at risk:** ${float(row['annual_value_at_risk']):,.0f} on ${float(row['spend_12m']):,.0f} trailing-12M spend")
+                    f"\n**Value at risk:** \\${float(row['annual_value_at_risk']):,.0f} on \\${float(row['spend_12m']):,.0f} trailing-12M spend")
             d1, d2, d3 = st.columns(3)
             channel = d1.selectbox("Channel", ["app", "email", "sms", "store associate"], index=["app", "email", "sms", "none"].index(row["preferred_channel"]) if row["preferred_channel"] in ["app", "email", "sms"] else 3)
             note = d2.text_input("Note", placeholder="Why / what was sent")
@@ -239,7 +239,7 @@ with tab_work:
                     except Exception as e:
                         st.error(f"Draft failed: {e}")
             if draft_key in st.session_state:
-                st.text_area("Draft (edit before sending)", st.session_state[draft_key], height=180, key=f"ta_{draft_key}")
+                st.text_area("Draft (edit before sending)", st.session_state[draft_key], height=320, key=f"ta_{draft_key}")
 
             if st.button("Record decision", type="primary"):
                 pg_exec(f"""INSERT INTO {APP_SCHEMA}.outreach_actions

@@ -133,3 +133,45 @@ Note: the `postgres` resource injects PGHOST, PGPORT, PGDATABASE, PGUSER (the ap
 2026-11-03T19:14:22Z [HTTP] 75.125.237.43 - 6255842418859349@7474649175147667 [03/Nov/2026:19:14:22 +0000] "GET / HTTP/1.1" 200 460 "https://fevm-loyalty-lapse-demo.cloud.databricks.com/" "Mozilla/5.0
 2026-11-03T19:22:15Z [HTTP] 75.125.237.43 - 6255842418859349@7474649175147667 [03/Nov/2026:19:22:15 +0000] "GET / HTTP/1.1" 304 0 "https://fevm-loyalty-lapse-demo.cloud.databricks.com/" "Mozilla/5.0 (
 ```
+
+echo
+
+echo "## AI outreach draft (observed in the app, 2026-11-06)"
+
+echo
+
+echo "Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint returned, grounded in the driver and action and without mentioning risk or scores:"
+
+echo
+
+echo '```text'
+
+echo "Subject: New arrivals, picked with you in mind, {first_name}"
+
+echo
+
+echo "Hi {first_name},"
+
+echo
+
+echo "Our newest pieces have just arrived, and we pulled together a few we think suit your style. As a G[old member ...]"
+
+echo '```'
+
+echo
+
+echo "Defects found and fixed during the user test: the endpoint rejects the temperature parameter (removed), returns content blocks rather than a string (joined), and Streamlit rendered \$ amounts as LaTeX (escaped)."
+
+## AI outreach draft (observed in the app, 2026-11-06)
+
+Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint returned, grounded in the driver and action and without mentioning risk or scores:
+
+```text
+Subject: New arrivals, picked with you in mind, {first_name}
+
+Hi {first_name},
+
+Our newest pieces have just arrived, and we pulled together a few we think suit your style. As a G[old member ...]
+```
+
+Defects found and fixed during the user test: the endpoint rejects the temperature parameter (removed), returns content blocks rather than a string (joined), and Streamlit rendered $ amounts as LaTeX (escaped).
