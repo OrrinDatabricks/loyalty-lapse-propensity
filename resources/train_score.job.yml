@@ -29,10 +29,20 @@ resources:
               catalog: ${var.catalog}
               schema: ${var.schema}
           environment_key: default
+        - task_key: govern
+          description: Scoring overwrites member_retention_scores, so re-apply its comments, tags and grants (and refresh the metric views) every run.
+          depends_on:
+            - task_key: score
+          notebook_task:
+            notebook_path: ../src/governance/apply_governance.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          environment_key: default
         - task_key: refresh_lakebase_worklist
           description: Scoring overwrites the Delta table, so the synced table needs a full refresh to pick up the new worklist.
           depends_on:
-            - task_key: score
+            - task_key: govern
           pipeline_task:
             pipeline_id: ${var.sync_pipeline_id}
             full_refresh: true

@@ -8,6 +8,7 @@ All numbers come from committed run outputs. Synthetic data; dollar figures are 
 | Gold + Silver share of members / of trailing-12M spend | 30.1% / 67.2% | gold_member_360 query (this file's generation step) |
 | Transactions / engagement events / campaign touches / returns ingested | 1.95M / 4.1M / 1.25M / 163K | `evidence/02_pipeline_tables.md` |
 | Pipeline expectations | 13 rules, 0 failed records | `evidence/02_pipeline_tables.md` |
+| Unity Catalog documentation coverage | 305 columns across 24 tables described (0 undocumented), every metric-view dimension and measure, catalog, both schemas, the raw volume and the registered model; comments survive pipeline updates and are re-applied weekly | `evidence/04_governance.md` |
 | Overall 90-day lapse rate (all members) | 49.0% | `evidence/06_genie_agent.md` (Genie answer), gold_member_360 |
 | Trailing-12M spend held by lapsed members | $27.1M total, $13.9M Gold + Silver | gold_member_360 query |
 | Lapse rate, Gold + Silver at mall stores vs other formats | 38.2% vs 27.4% | gold_member_360 query |

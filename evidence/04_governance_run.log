@@ -1,8 +1,8 @@
 Uploading bundle files to /Workspace/Users/orrin.edenfield@databricks.com/.bundle/loyalty_lapse_propensity/dev/files...
-Files: 5 uploaded, 0 deleted
-Resources: 0 created, 0 changed, 0 deleted, 4 unchanged
-Run URL: https://fevm-loyalty-lapse-demo.cloud.databricks.com/jobs/317677494554844/runs/934442916820999?o=7474649175147667
+Files: 4 uploaded, 0 deleted
+Resources: 0 created, 0 changed, 0 deleted, 6 unchanged
+Run URL: https://fevm-loyalty-lapse-demo.cloud.databricks.com/jobs/317677494554844/runs/12510948731792?o=7474649175147667
 
-2026-11-03 09:33:56 "[loyalty] 04 unity catalog governance and metric views" RUNNING
-2026-11-03 09:35:07 "[loyalty] 04 unity catalog governance and metric views" TERMINATED SUCCESS
+2026-11-06 09:53:51 "[loyalty] 04 unity catalog governance and metric views" RUNNING
+2026-11-06 09:58:25 "[loyalty] 04 unity catalog governance and metric views" TERMINATED SUCCESS
 exit=0
