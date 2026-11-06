@@ -1,7 +1,7 @@
 variables:
   llm_endpoint:
     description: Foundation model serving endpoint used for outreach drafts
-    default: databricks-claude-sonnet-5-5
+    default: databricks-meta-llama-3-3-70b-instruct
   genie_space_id:
     description: Genie Agent (space) id created by src/genie/deploy_genie_agent.sh
     default: "01f1d7ad1e5214009afaa179877af99d"

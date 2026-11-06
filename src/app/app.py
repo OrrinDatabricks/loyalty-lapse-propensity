@@ -106,7 +106,7 @@ def wh_df(query):
         return pd.DataFrame(cur.fetchall(), columns=[d[0] for d in cur.description])
 
 
-LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "databricks-claude-sonnet-5-5")
+LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "databricks-meta-llama-3-3-70b-instruct")
 
 
 def draft_outreach(row, channel):
@@ -124,7 +124,7 @@ def draft_outreach(row, channel):
               "Never mention probabilities, scores, data, or that the member is at risk. Warm, specific, no exclamation marks, "
               "no em dashes, plain text only (no markdown, no asterisks). Use {first_name} as a placeholder.")
     resp = client.chat.completions.create(
-        model=LLM_ENDPOINT, max_tokens=400,  # Claude 5.x endpoints reject the temperature parameter
+        model=LLM_ENDPOINT, max_tokens=700, temperature=0.5,
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": f"Member brief as JSON:\n{brief}\n\nWrite the {channel} message."}],
     )

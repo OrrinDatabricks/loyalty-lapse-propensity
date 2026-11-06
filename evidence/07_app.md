@@ -140,7 +140,7 @@ echo "## AI outreach draft (observed in the app, 2026-11-06)"
 
 echo
 
-echo "Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint returned, grounded in the driver and action and without mentioning risk or scores:"
+echo "Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint (since replaced by Llama 3.3 70B Instruct, see below) returned, grounded in the driver and action and without mentioning risk or scores:"
 
 echo
 
@@ -164,7 +164,7 @@ echo "Defects found and fixed during the user test: the endpoint rejects the tem
 
 ## AI outreach draft (observed in the app, 2026-11-06)
 
-Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint returned, grounded in the driver and action and without mentioning risk or scores:
+Member M0184345 (Gold, p=0.83, driver engagement_drop, action: app push + personalized new-arrivals email), channel email. The Claude Sonnet 5.5 endpoint (since replaced by Llama 3.3 70B Instruct, see below) returned, grounded in the driver and action and without mentioning risk or scores:
 
 ```text
 Subject: New arrivals, picked with you in mind, {first_name}
@@ -175,3 +175,6 @@ Our newest pieces have just arrived, and we pulled together a few we think suit 
 ```
 
 Defects found and fixed during the user test: the endpoint rejects the temperature parameter (removed), returns content blocks rather than a string (joined), and Streamlit rendered $ amounts as LaTeX (escaped).
+
+
+Follow-up: Claude 5.x endpoints consume part of max_tokens on reasoning, which truncated or emptied drafts. The app now uses `databricks-meta-llama-3-3-70b-instruct` (no reasoning budget, cheaper, supports temperature) with max_tokens=700.
