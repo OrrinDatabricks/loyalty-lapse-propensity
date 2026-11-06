@@ -128,7 +128,14 @@ def draft_outreach(row, channel):
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": f"Member brief as JSON:\n{brief}\n\nWrite the {channel} message."}],
     )
-    return resp.choices[0].message.content.strip()
+    content = resp.choices[0].message.content
+    if isinstance(content, list):  # Claude endpoints return content blocks, not a plain string
+        content = "\n".join(
+            (b.get("text") if isinstance(b, dict) else getattr(b, "text", "")) or ""
+            for b in content
+            if (b.get("type") if isinstance(b, dict) else getattr(b, "type", "text")) == "text"
+        )
+    return (content or "").strip()
 
 
 def current_user():
