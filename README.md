@@ -12,6 +12,23 @@ finds out when members have already been silent for 90 days, which is too late t
 go silent in the next 90 days, serves that worklist from Lakebase to a retention console that writes decisions back,
 and lets analysts ask the Genie Agent questions in plain English against governed metric views.
 
+## Requirements checklist
+
+| Requirement | Where it is met |
+|---|---|
+| Specific industry problem | Specialty apparel retail: loyalty members lapsing after a product-fit change and a reward devaluation. On the FY27 Retail Industry Outcome Map this sits under the business outcome "Respond & Predict to Customer Behavior in Real Time", use-case domains "Unified Customer View" (Customer 360) and "Actionable Customer Understanding" (Behavioral Segmentation, Customer Lifetime Value) |
+| Raw dataset, synthetic or public | Seven synthetic extracts generated on serverless by `src/generate/generate_synthetic_data.py`, landed as CSV/JSON files in a UC volume |
+| Lakeflow ingests the raw data | Serverless Spark Declarative Pipeline with Auto Loader, 7 bronze streaming tables, 13 expectations (`src/pipeline/`) |
+| Unity Catalog governs it | Column comments, tags, PII masking, grants, three metric views, UC model registry, lineage (`src/governance/`, `evidence/04_*`, `evidence/09_lineage.md`) |
+| Lakebase for operational serving | Synced worklist read by the app in milliseconds, decisions written back, refreshed automatically after each scoring run (`src/lakebase/`, `evidence/05_*`) |
+| ML or Gen AI | MLflow lapse model with temporal hold-out and calibration (`MODEL.md`), plus a foundation model drafting outreach in the app |
+| Genie Agent | "Loyalty Retention" agent on the metric views; 6 conversation answers and a 4 of 4 benchmark run (`src/genie/`, `evidence/06_*`) |
+| Databricks App | Streamlit retention console with worklist, write-back, AI drafts and embedded Genie (`src/app/`, `evidence/07_*`); AI/BI dashboard as a second business surface (`evidence/08_*`) |
+| Integrated, not siloed | One bundle; UC lineage shows 40 recorded edges from bronze to the Lakebase sync (`evidence/09_lineage.md`) |
+| Execution evidence readable as text | Executed notebook outputs, event-log queries, API responses, logs and query results committed under `evidence/`; indexed below |
+| No customer data | Everything synthetic; no customer names, identifiers or records anywhere in the repo |
+| Deck | `deck/loyalty_lapse_deck.pdf` (export of the Google Slides deck), outcome-led, KPIs quantified, sponsor and domain owner addressed |
+
 ## Data journey
 
 ```mermaid
@@ -60,6 +77,7 @@ deliver them.
 | `evidence/06_genie_agent.md` | Genie Agent creation output and Conversation API answers to the benchmark questions |
 | `evidence/07_app.md` | App deployment status, injected Lakebase variables, user activity from the log |
 | `evidence/08_dashboard.md` | AI/BI dashboard creation and publish state |
+| `evidence/09_lineage.md` | Unity Catalog `system.access.table_lineage` graph: 40 recorded source-to-target edges from bronze through silver, gold, metric views, feature sets, scores and the Lakebase synced table, proving the stages are integrated rather than siloed |
 
 ## Reproduce
 
