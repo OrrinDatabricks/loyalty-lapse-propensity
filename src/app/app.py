@@ -81,16 +81,40 @@ def init_app_schema(conn):
         cur.execute(f"CREATE INDEX IF NOT EXISTS ix_outreach_member ON {APP_SCHEMA}.outreach_actions (member_id, decided_at DESC)")
 
 
+def _pg_reset():
+    """Drop the cached connection so the next call reconnects with a fresh token."""
+    s = pg_state()
+    try:
+        if s["conn"] is not None:
+            s["conn"].close()
+    except Exception:
+        pass
+    s["conn"], s["token_at"] = None, 0.0
+
+
 def pg_df(query, params=None):
-    with pg_conn().cursor() as cur:
-        cur.execute(query, params)
-        cols = [d[0] for d in cur.description]
-        return pd.DataFrame(cur.fetchall(), columns=cols)
+    for attempt in (1, 2):  # a stale server-side session fails once, then we reconnect and retry
+        try:
+            with pg_conn().cursor() as cur:
+                cur.execute(query, params)
+                cols = [d[0] for d in cur.description]
+                return pd.DataFrame(cur.fetchall(), columns=cols)
+        except Exception:
+            if attempt == 2:
+                raise
+            _pg_reset()
 
 
 def pg_exec(query, params=None):
-    with pg_conn().cursor() as cur:
-        cur.execute(query, params)
+    for attempt in (1, 2):
+        try:
+            with pg_conn().cursor() as cur:
+                cur.execute(query, params)
+            return
+        except Exception:
+            if attempt == 2:
+                raise
+            _pg_reset()
 
 
 # ---------- SQL warehouse (governed KPIs from metric views) ----------
@@ -102,9 +126,21 @@ def wh_conn():
 
 @st.cache_data(ttl=300)
 def wh_df(query):
-    with wh_conn().cursor() as cur:
-        cur.execute(query)
-        return pd.DataFrame(cur.fetchall(), columns=[d[0] for d in cur.description])
+    # The warehouse auto-stops when idle and the cached connection's session dies with it.
+    # On any failure, drop the cached connection, reconnect (which also wakes the warehouse) and retry once.
+    for attempt in (1, 2):
+        try:
+            with wh_conn().cursor() as cur:
+                cur.execute(query)
+                return pd.DataFrame(cur.fetchall(), columns=[d[0] for d in cur.description])
+        except Exception:
+            if attempt == 2:
+                raise
+            try:
+                wh_conn().close()
+            except Exception:
+                pass
+            wh_conn.clear()
 
 
 LLM_ENDPOINT = os.getenv("LLM_ENDPOINT", "databricks-meta-llama-3-3-70b-instruct")
